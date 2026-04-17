@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Marka Analitik — Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f6f2;--white:#fff;--ink:#1c1917;--ink2:#44403c;--muted:#a8a29e;
+  --line:#e7e5e4;--navy:#1e3a5f;--green:#15803d;--red:#b91c1c;--amber:#b45309;
+  --green-bg:#dcfce7;--red-bg:#fee2e2;--amber-bg:#fef3c7;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);--r:12px;
+  font-family:'Cabinet Grotesk',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);min-height:100vh}
+#loading-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.spinner{width:36px;height:36px;border:3px solid var(--line);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#app{display:none}
+#app.show{display:block}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--line);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.topbar-logo{font-family:'Fraunces',serif;font-size:17px;color:var(--navy)}
+.topbar-logo span{color:#c8410a}
+.brand-pill{background:var(--navy);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700}
+.demo-badge{background:#fef3c7;color:#b45309;border:1px solid #fde68a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.expire-note{font-size:11px;color:var(--muted)}
+
+/* TABS */
+.nav-tabs{background:var(--white);border-bottom:1px solid var(--line);padding:0 28px;display:flex;gap:2px}
+.tab{padding:13px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:700}
+
+/* CONTENT */
+.content{padding:24px 28px;max-width:1280px;margin:0 auto}
+.page{display:none}
+.page.active{display:block}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.stat-accent{border-top:3px solid var(--navy)}
+.stat-green{border-top:3px solid var(--green)}
+.stat-red{border-top:3px solid var(--red)}
+.stat-amber{border-top:3px solid var(--amber)}
+.stat-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.stat-value{font-family:'Fraunces',serif;font-size:36px;color:var(--ink);line-height:1}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:20px}
+.card-header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em}
+.card-body{padding:20px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:20px}
+
+/* RING */
+.ring-wrap{position:relative;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-num span:first-child{font-family:'Fraunces',serif;font-size:28px;color:var(--ink)}
+.ring-num span:last-child{font-size:10px;color:var(--muted)}
+
+/* SENT BAR */
+.sent-bar{height:8px;border-radius:4px;overflow:hidden;display:flex;margin-bottom:8px}
+.sb-g{background:#15803d;transition:width .8s}
+.sb-a{background:#f59e0b;transition:width .8s}
+.sb-r{background:#b91c1c;transition:width .8s}
+.sent-legend{display:flex;gap:14px;font-size:12px}
+.sl{display:flex;align-items:center;gap:5px}
+.sl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* CATEGORY TAGS */
+.tag-grid{display:flex;flex-wrap:wrap;gap:8px}
+.cat-tag{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;border:1.5px solid;cursor:default}
+.cat-pos{background:var(--green-bg);color:var(--green);border-color:#86efac}
+.cat-neu{background:#f1f5f9;color:#475569;border-color:#cbd5e1}
+.cat-neg{background:var(--red-bg);color:var(--red);border-color:#fca5a5}
+
+/* REVIEW CARDS */
+.rv{border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px}
+.rv-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.rv-score{font-family:'Fraunces',serif;font-size:18px;font-weight:600}
+.rv-platform{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.gmaps{background:#e8f5e9;color:#2e7d32}
+.twitter{background:#e3f2fd;color:#1565c0}
+.eksi{background:#fff3e0;color:#e65100}
+.rv-text{font-size:13px;color:var(--ink2);line-height:1.6}
+.rv-date{font-size:11px;color:var(--muted)}
+.rv-loc{font-size:11px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:10px}
+
+/* LOCATION CARDS */
+.loc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+.loc-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);cursor:pointer;transition:border-color .15s}
+.loc-card:hover{border-color:var(--navy)}
+.loc-card.active{border-color:var(--navy);border-width:2px}
+.loc-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.loc-addr{font-size:12px;color:var(--muted);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loc-score{font-family:'Fraunces',serif;font-size:32px;line-height:1}
+.loc-score-label{font-size:11px;color:var(--muted);margin-top:2px}
+.loc-mini-bar{height:4px;border-radius:2px;overflow:hidden;display:flex;margin-top:10px}
+
+/* SOCIAL */
+.soc-filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.soc-filter-btn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--line);font-size:12px;font-weight:600;cursor:pointer;background:var(--white);font-family:inherit;transition:all .15s}
+.soc-filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* CHART */
+.chart-wrap{height:220px;position:relative}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+
+/* LIMIT BANNER */
+.limit-banner{background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#92400e}
+
+/* FETCH BAR */
+.fetch-bar{background:var(--white);border-bottom:1px solid var(--line);padding:10px 28px;display:flex;align-items:center;gap:12px;font-size:13px}
+.fetch-bar select,.fetch-bar input{border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-family:inherit;font-size:12px;outline:none}
+.btn{padding:8px 16px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{opacity:.85}
+.btn-sm{padding:5px 12px;font-size:12px}
+.fetch-result{font-size:12px;color:var(--muted)}
+
+@media(max-width:768px){
+  .stats{grid-template-columns:1fr 1fr}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="font-size:14px;color:#7a7060">Veriler yükleniyor...</div>
+</div>
+
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="topbar-logo">marka <span>algı</span></div>
+      <div class="brand-pill" id="brand-name-badge">—</div>
+      <div class="demo-badge">DEMO</div>
+    </div>
+    <div class="topbar-right">
+      <span class="expire-note" id="expire-note"></span>
+    </div>
+  </div>
+
+  <!-- FETCH BAR -->
+  <div class="fetch-bar">
+    <span style="font-weight:600;color:var(--ink)">Veri Çek:</span>
+    <input type="date" id="date-from" value="2025-06-01">
+    <span style="color:var(--muted)">—</span>
+    <input type="date" id="date-to" value="2025-12-31">
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px">
+      <input type="checkbox" id="chk-twitter"> Twitter
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px">
+      <input type="checkbox" id="chk-eksi"> Ekşi
+    </label>
+    <button class="btn btn-primary btn-sm" onclick="triggerFetch()">🔄 Çek ve Analiz Et</button>
+    <span class="fetch-result" id="fetch-result"></span>
+  </div>
+
+  <!-- TABS -->
+  <div class="nav-tabs">
+    <div class="tab active" onclick="goTab('overview')">Genel Bakış</div>
+    <div class="tab" onclick="goTab('locations')">📍 Şubeler</div>
+    <div class="tab" onclick="goTab('social')">🔍 Sosyal Medya</div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- GENEL BAKIŞ -->
+    <div class="page active" id="tab-overview">
+      <div id="limit-banner" class="limit-banner" style="display:none">
+        ⚠️ Demo limiti doldu (50 yorum). Tüm özellikleri kullanmak için bizimle iletişime geçin.
+      </div>
+
+      <div class="stats">
+        <div class="stat stat-accent">
+          <div class="stat-label">Genel Skor</div>
+          <div class="stat-value" id="ov-score">—</div>
+          <div class="stat-sub">tüm kaynaklar</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Toplam Yorum</div>
+          <div class="stat-value" id="ov-total">—</div>
+          <div class="stat-sub" id="ov-sources"></div>
+        </div>
+        <div class="stat stat-green">
+          <div class="stat-label">Pozitif</div>
+          <div class="stat-value" id="ov-pos">—</div>
+          <div class="stat-sub" id="ov-pos-pct"></div>
+        </div>
+        <div class="stat stat-red">
+          <div class="stat-label">Negatif</div>
+          <div class="stat-value" id="ov-neg">—</div>
+          <div class="stat-sub" id="ov-neg-pct"></div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Duygu Dağılımı</span></div>
+          <div class="card-body">
+            <div style="display:flex;align-items:center;gap:20px">
+              <div class="ring-wrap">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" stroke-width="10"/>
+                  <circle id="ring-circle" cx="50" cy="50" r="40" fill="none" stroke="#15803d" stroke-width="10"
+                    stroke-dasharray="251" stroke-dashoffset="251" stroke-linecap="round" style="transition:stroke-dashoffset 1s ease"/>
+                </svg>
+                <div class="ring-num">
+                  <span id="ring-num">—</span>
+                  <span>/ 100</span>
+                </div>
+              </div>
+              <div style="flex:1">
+                <div class="sent-bar">
+                  <div class="sb-g" id="sb-g" style="width:0%"></div>
+                  <div class="sb-a" id="sb-a" style="width:0%"></div>
+                  <div class="sb-r" id="sb-r" style="width:0%"></div>
+                </div>
+                <div class="sent-legend">
+                  <div class="sl"><div class="sl-dot" style="background:#15803d"></div><span id="l-pos">—</span></div>
+                  <div class="sl"><div class="sl-dot" style="background:#f59e0b"></div><span id="l-neu">—</span></div>
+                  <div class="sl"><div class="sl-dot" style="background:#b91c1c"></div><span id="l-neg">—</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Kaynak Dağılımı</span></div>
+          <div class="card-body" id="platform-body"><div class="empty"><span class="spinner"></span></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Kategori Durumu</span></div>
+        <div class="card-body"><div class="tag-grid" id="cat-tags"><div class="empty"><span class="spinner"></span></div></div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title" style="color:var(--red)">▼ En Olumsuz Yorumlar</span></div>
+          <div class="card-body" id="worst-list"><div class="empty"><span class="spinner"></span></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title" style="color:var(--green)">▲ En Olumlu Yorumlar</span></div>
+          <div class="card-body" id="best-list"><div class="empty"><span class="spinner"></span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ŞUBELER -->
+    <div class="page" id="tab-locations">
+      <div class="loc-grid" id="loc-grid"><div class="empty"><span class="spinner"></span></div></div>
+      <div id="loc-detail" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title" id="loc-detail-name">Şube Detayı</span>
+          </div>
+          <div class="card-body">
+            <div class="grid-2" style="margin-bottom:16px">
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Duygu Dağılımı</div>
+                <div class="sent-bar" id="loc-sent-bar">
+                  <div class="sb-g" id="loc-sb-g" style="width:0%"></div>
+                  <div class="sb-a" id="loc-sb-a" style="width:0%"></div>
+                  <div class="sb-r" id="loc-sb-r" style="width:0%"></div>
+                </div>
+                <div class="sent-legend">
+                  <div class="sl"><div class="sl-dot" style="background:#15803d"></div><span id="loc-l-pos">—</span></div>
+                  <div class="sl"><div class="sl-dot" style="background:#f59e0b"></div><span id="loc-l-neu">—</span></div>
+                  <div class="sl"><div class="sl-dot" style="background:#b91c1c"></div><span id="loc-l-neg">—</span></div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Kategori Durumu</div>
+                <div class="tag-grid" id="loc-cat-tags"></div>
+              </div>
+            </div>
+            <div id="loc-reviews"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOSYAL MEDYA -->
+    <div class="page" id="tab-social">
+      <div class="soc-filter-row">
+        <button class="soc-filter-btn active" onclick="setSocFilter('all',this)">Tümü</button>
+        <button class="soc-filter-btn" onclick="setSocFilter('twitter_x',this)">Twitter / X</button>
+        <button class="soc-filter-btn" onclick="setSocFilter('eksisozluk',this)">Ekşi Sözlük</button>
+        <select id="soc-sent" onchange="loadSocial()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 10px;font-family:inherit;font-size:12px;outline:none">
+          <option value="">Tüm Duygu</option>
+          <option value="positive">Pozitif</option>
+          <option value="neutral">Nötr</option>
+          <option value="negative">Negatif</option>
+        </select>
+      </div>
+      <div id="soc-stats" class="stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><div class="stat-label">Toplam Paylaşım</div><div class="stat-value" id="soc-total">—</div></div>
+        <div class="stat stat-green"><div class="stat-label">Pozitif</div><div class="stat-value" id="soc-pos">—</div></div>
+        <div class="stat stat-red"><div class="stat-label">Negatif</div><div class="stat-value" id="soc-neg">—</div></div>
+      </div>
+      <div id="soc-list"><div class="empty"><span class="spinner"></span></div></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+const SUPABASE_URL = 'https://escjdzsfxzwvshapzugb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2pkenNmeHp3dnNoYXB6dWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzMzgsImV4cCI6MjA4OTg4MDMzOH0.ylywekAEhONMpx5RBCdZXafUna9jZcB19etFrEcRJe8';
+const API_BASE = 'https://web-production-f48f6.up.railway.app';
+
+let sb, uid, brandId, brandName, allLocations=[], allConnectors=[], socFilter='all';
+
+// ── INIT ───────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const params = new URLSearchParams(window.location.search);
+  uid = params.get('uid');
+  if (!uid) { window.location.href = './index.html'; return; }
+
+  try {
+    const resp = await fetch(`${API_BASE}/demo/status?uid=${uid}`);
+    const s = await resp.json();
+
+    if (!resp.ok || s.is_blocked) { alert('Erişim engellendi.'); window.location.href='./index.html'; return; }
+    if (!s.is_confirmed) { window.location.href=`./wizard.html?uid=${uid}`; return; }
+    if (!s.brand_id) { window.location.href=`./wizard.html?uid=${uid}`; return; }
+
+    brandId   = s.brand_id;
+    brandName = s.brand_name || 'Markanız';
+    document.getElementById('brand-name-badge').textContent = brandName;
+
+    // Expire tarihi
+    if (s.expires_at) {
+      const d = new Date(s.expires_at);
+      document.getElementById('expire-note').textContent =
+        `Demo ${d.toLocaleDateString('tr-TR')} tarihine kadar aktif`;
+    }
+
+    // Limit banner
+    if (s.limit_reached) {
+      document.getElementById('limit-banner').style.display = 'block';
+    }
+
+    // Connector'ları yükle
+    const { data: conns } = await sb.from('connectors').select('connector_id, key, name');
+    allConnectors = conns || [];
+
+    // Lokasyonları yükle
+    const { data: locs } = await sb.from('locations').select('location_id, name, address').eq('brand_id', brandId);
+    allLocations = locs || [];
+
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+
+    loadOverview();
+  } catch(e) {
+    console.error(e);
+    document.getElementById('loading-screen').innerHTML = '<div style="color:#b91c1c">Bağlantı hatası. Sayfayı yenileyin.</div>';
+  }
+});
+
+// ── TAB ────────────────────────────────────────────────────
+let activeTab = 'overview';
+function goTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['overview','locations','social'];
+    t.classList.toggle('active', tabs[i]===tab);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  activeTab = tab;
+  if (tab==='overview')  loadOverview();
+  if (tab==='locations') loadLocations();
+  if (tab==='social')    loadSocial();
+}
+
+// ── HELPERS ────────────────────────────────────────────────
+async function sbChunkedIn(table, select, col, ids, extra={}, chunk=5) {
+  const results = [];
+  for (let i=0; i<ids.length; i+=chunk) {
+    let q = sb.from(table).select(select).in(col, ids.slice(i,i+chunk));
+    for (const [k,v] of Object.entries(extra)) q = q.eq(k,v);
+    const { data } = await q;
+    if (data) results.push(...data);
+  }
+  return results;
+}
+
+function scoreColor(s){ return s>=60?'var(--green)':s>=40?'#f59e0b':'var(--red)'; }
+function fdate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('tr-TR',{day:'2-digit',month:'short',year:'numeric'}); }
+function truncate(s,n=180){ return s && s.length>n ? s.slice(0,n)+'…' : (s||'—'); }
+
+function platformBadge(cid) {
+  const key = allConnectors.find(c=>c.connector_id===cid)?.key||'';
+  if (key==='google_maps') return '<span class="rv-platform gmaps">Google Maps</span>';
+  if (key==='twitter_x')   return '<span class="rv-platform twitter">Twitter/X</span>';
+  if (key==='eksisozluk')  return '<span class="rv-platform eksi">Ekşi</span>';
+  return '<span class="rv-platform">—</span>';
+}
+
+function connName(cid){ return allConnectors.find(c=>c.connector_id===cid)?.name||''; }
+function locName(lid){  return allLocations.find(l=>l.location_id===lid)?.name||'—'; }
+
+async function getLocIds() {
+  return allLocations.map(l=>l.location_id);
+}
+
+async function getRevIds(locIds, cKey=null) {
+  if (!locIds.length) return [];
+  const results = [];
+  for (let i=0; i<locIds.length; i+=5) {
+    const { data } = await sb.from('reviews').select('review_id, connector_id').in('location_id', locIds.slice(i,i+5));
+    if (data) results.push(...data);
+  }
+  if (!cKey) return results.map(r=>r.review_id);
+  const cid = allConnectors.find(c=>c.key===cKey)?.connector_id;
+  return results.filter(r=>r.connector_id===cid).map(r=>r.review_id);
+}
+
+// ── OVERVIEW ───────────────────────────────────────────────
+async function loadOverview() {
+  const locIds = await getLocIds();
+  const revIds = await getRevIds(locIds);
+  if (!revIds.length) {
+    ['ov-score','ov-total','ov-pos','ov-neg'].forEach(id=>document.getElementById(id).textContent='0');
+    document.getElementById('platform-body').innerHTML='<div class="empty">Henüz veri yok. Çek ve Analiz Et butonuna basın.</div>';
+    document.getElementById('cat-tags').innerHTML='<div class="empty">Veri bekleniyor</div>';
+    document.getElementById('worst-list').innerHTML='';
+    document.getElementById('best-list').innerHTML='';
+    return;
+  }
+
+  const analyses = await sbChunkedIn('review_analysis','overall_sentiment,sentiment_score','review_id',revIds);
+  const all = analyses||[], total=all.length;
+  const pos=all.filter(a=>a.overall_sentiment==='positive').length;
+  const neg=all.filter(a=>a.overall_sentiment==='negative').length;
+  const neu=total-pos-neg;
+  const avg=total?Math.round(all.reduce((s,a)=>s+(a.sentiment_score||0),0)/total):0;
+
+  document.getElementById('ov-score').textContent=avg;
+  document.getElementById('ov-score').style.color=scoreColor(avg);
+  document.getElementById('ov-total').textContent=total;
+  document.getElementById('ov-pos').textContent=pos;
+  document.getElementById('ov-pos-pct').textContent=`%${Math.round(pos/total*100)} oran`;
+  document.getElementById('ov-neg').textContent=neg;
+  document.getElementById('ov-neg-pct').textContent=`%${Math.round(neg/total*100)} oran`;
+
+  const circ=251;
+  document.getElementById('ring-num').textContent=avg;
+  document.getElementById('ring-circle').style.strokeDashoffset=circ-(circ*avg/100);
+  document.getElementById('ring-circle').style.stroke=scoreColor(avg);
+
+  const pp=Math.round(pos/total*100), np=Math.round(neu/total*100), negp=100-pp-np;
+  document.getElementById('sb-g').style.width=pp+'%';
+  document.getElementById('sb-a').style.width=np+'%';
+  document.getElementById('sb-r').style.width=negp+'%';
+  document.getElementById('l-pos').textContent=`${pp}% Pozitif`;
+  document.getElementById('l-neu').textContent=`${np}% Nötr`;
+  document.getElementById('l-neg').textContent=`${negp}% Negatif`;
+
+  // Kaynak dağılımı
+  const revWithConn = [];
+  for (let i=0; i<locIds.length; i+=5) {
+    const { data } = await sb.from('reviews').select('connector_id').in('location_id', locIds.slice(i,i+5));
+    if (data) revWithConn.push(...data);
+  }
+  const counts={};
+  revWithConn.forEach(r=>{ counts[r.connector_id]=(counts[r.connector_id]||0)+1; });
+  const pTotal=Object.values(counts).reduce((s,v)=>s+v,0)||1;
+  document.getElementById('ov-sources').textContent=`${Object.keys(counts).length} kaynak`;
+  document.getElementById('platform-body').innerHTML=Object.entries(counts)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([cid,cnt])=>`
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:13px;font-weight:600">${connName(cid)||'—'}</span>
+          <span style="font-size:11px;color:var(--muted)">${cnt} yorum (%${Math.round(cnt/pTotal*100)})</span>
+        </div>
+        <div style="height:5px;background:var(--line);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${Math.round(cnt/pTotal*100)}%;background:var(--navy);border-radius:3px"></div>
+        </div>
+      </div>`).join('')||'<div class="empty">Veri yok</div>';
+
+  await Promise.all([loadCatTags(revIds,'cat-tags'), loadBestWorst(revIds)]);
+}
+
+async function loadCatTags(revIds, targetId) {
+  const el=document.getElementById(targetId);
+  if (!revIds.length) { el.innerHTML='<div class="empty">Veri yok</div>'; return; }
+  const cats=await sbChunkedIn('review_category_analysis','sentiment,categories(name,key)','review_id',revIds,{present:true});
+  const map={};
+  (cats||[]).forEach(c=>{
+    const n=(c.categories||{}).name; if(!n) return;
+    if(!map[n]) map[n]={pos:0,neg:0,total:0};
+    map[n].total++; if(c.sentiment==='positive') map[n].pos++; else if(c.sentiment==='negative') map[n].neg++;
+  });
+  el.innerHTML=Object.entries(map).sort((a,b)=>b[1].total-a[1].total).map(([name,v])=>{
+    const pct=Math.round(v.pos/v.total*100);
+    const cls=pct>=60?'cat-pos':pct>=40?'cat-neu':'cat-neg';
+    return `<div class="cat-tag ${cls}">${name} <span style="opacity:.7">${pct}%</span></div>`;
+  }).join('')||'<div class="empty">Kategori yok</div>';
+}
+
+async function loadBestWorst(revIds) {
+  if (!revIds.length) return;
+  const analyses=await sbChunkedIn('review_analysis','review_id,overall_sentiment,sentiment_score','review_id',revIds);
+  const sorted=[...analyses].sort((a,b)=>a.sentiment_score-b.sentiment_score);
+  const worstIds=sorted.slice(0,5).map(a=>a.review_id);
+  const bestIds=sorted.slice(-5).reverse().map(a=>a.review_id);
+
+  async function renderList(ids, el, isPos) {
+    if (!ids.length) { el.innerHTML='<div class="empty">Veri yok</div>'; return; }
+    const revs=await sbChunkedIn('reviews','review_id,review_text,review_date,connector_id,location_id','review_id',ids);
+    const amap={};analyses.forEach(a=>amap[a.review_id]=a);
+    const rmap={};revs.forEach(r=>rmap[r.review_id]=r);
+    el.innerHTML=ids.map(id=>{
+      const r=rmap[id], a=amap[id]; if(!r) return '';
+      return `<div class="rv">
+        <div class="rv-meta">
+          <span class="rv-score" style="color:${scoreColor(a?.sentiment_score||50)}">${a?.sentiment_score||'—'}</span>
+          ${platformBadge(r.connector_id)}
+          <span class="rv-loc">${locName(r.location_id)}</span>
+          <span class="rv-date">${fdate(r.review_date)}</span>
+        </div>
+        <div class="rv-text">${truncate(r.review_text)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  await renderList(worstIds, document.getElementById('worst-list'), false);
+  await renderList(bestIds,  document.getElementById('best-list'),  true);
+}
+
+// ── LOCATIONS ──────────────────────────────────────────────
+async function loadLocations() {
+  const el=document.getElementById('loc-grid');
+  if (!allLocations.length) { el.innerHTML='<div class="empty">Lokasyon bulunamadı</div>'; return; }
+
+  // Her lokasyon için skor hesapla
+  const cards=await Promise.all(allLocations.map(async loc=>{
+    const { data: revs }=await sb.from('reviews').select('review_id').eq('location_id',loc.location_id);
+    const revIds=(revs||[]).map(r=>r.review_id);
+    if (!revIds.length) return { ...loc, avg:0, total:0, pos:0, neg:0 };
+    const analyses=await sbChunkedIn('review_analysis','overall_sentiment,sentiment_score','review_id',revIds);
+    const total=analyses.length;
+    const pos=analyses.filter(a=>a.overall_sentiment==='positive').length;
+    const neg=analyses.filter(a=>a.overall_sentiment==='negative').length;
+    const avg=total?Math.round(analyses.reduce((s,a)=>s+(a.sentiment_score||0),0)/total):0;
+    return { ...loc, avg, total, pos, neg, revIds };
+  }));
+
+  el.innerHTML=cards.map((c,i)=>`
+    <div class="loc-card" onclick="showLocDetail(${i})" id="loc-card-${i}">
+      <div class="loc-name">📍 ${c.name}</div>
+      <div class="loc-addr">${c.address||''}</div>
+      <div class="loc-score" style="color:${scoreColor(c.avg)}">${c.avg}</div>
+      <div class="loc-score-label">${c.total} yorum analiz edildi</div>
+      <div class="loc-mini-bar">
+        <div class="sb-g" style="width:${c.total?Math.round(c.pos/c.total*100):0}%"></div>
+        <div class="sb-r" style="width:${c.total?Math.round(c.neg/c.total*100):0}%"></div>
+      </div>
+    </div>`).join('');
+
+  window._locCards=cards;
+}
+
+async function showLocDetail(i) {
+  const loc=window._locCards[i];
+  document.querySelectorAll('.loc-card').forEach((c,j)=>c.classList.toggle('active',j===i));
+  document.getElementById('loc-detail').style.display='block';
+  document.getElementById('loc-detail-name').textContent=`📍 ${loc.name}`;
+
+  const total=loc.total||0, pos=loc.pos||0, neg=loc.neg||0, neu=total-pos-neg;
+  const pp=total?Math.round(pos/total*100):0, np=total?Math.round(neu/total*100):0;
+  document.getElementById('loc-sb-g').style.width=pp+'%';
+  document.getElementById('loc-sb-a').style.width=np+'%';
+  document.getElementById('loc-sb-r').style.width=(100-pp-np)+'%';
+  document.getElementById('loc-l-pos').textContent=`${pp}% Pozitif`;
+  document.getElementById('loc-l-neu').textContent=`${np}% Nötr`;
+  document.getElementById('loc-l-neg').textContent=`${100-pp-np}% Negatif`;
+
+  if (loc.revIds && loc.revIds.length) {
+    await loadCatTags(loc.revIds,'loc-cat-tags');
+    const analyses=await sbChunkedIn('review_analysis','review_id,sentiment_score','review_id',loc.revIds);
+    const sorted=[...analyses].sort((a,b)=>a.sentiment_score-b.sentiment_score);
+    const topIds=[...sorted.slice(0,3).map(a=>a.review_id),...sorted.slice(-3).reverse().map(a=>a.review_id)];
+    const revs=await sbChunkedIn('reviews','review_id,review_text,review_date,connector_id','review_id',topIds);
+    const amap={};analyses.forEach(a=>amap[a.review_id]=a);
+    const rmap={};revs.forEach(r=>rmap[r.review_id]=r);
+    document.getElementById('loc-reviews').innerHTML=topIds.map(id=>{
+      const r=rmap[id],a=amap[id]; if(!r) return '';
+      return `<div class="rv">
+        <div class="rv-meta">
+          <span class="rv-score" style="color:${scoreColor(a?.sentiment_score||50)}">${a?.sentiment_score||'—'}</span>
+          ${platformBadge(r.connector_id)}
+          <span class="rv-date">${fdate(r.review_date)}</span>
+        </div>
+        <div class="rv-text">${truncate(r.review_text)}</div>
+      </div>`;
+    }).join('');
+  } else {
+    document.getElementById('loc-cat-tags').innerHTML='<div class="empty">Veri yok</div>';
+    document.getElementById('loc-reviews').innerHTML='';
+  }
+}
+
+// ── SOCIAL ─────────────────────────────────────────────────
+function setSocFilter(key, btn) {
+  socFilter=key;
+  document.querySelectorAll('.soc-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadSocial();
+}
+
+async function loadSocial() {
+  const el=document.getElementById('soc-list');
+  const sentFilter=document.getElementById('soc-sent').value;
+  const locIds=await getLocIds();
+
+  const socialKeys=['twitter_x','eksisozluk'];
+  const filteredKeys=socFilter==='all'?socialKeys:[socFilter];
+  const revIds=[];
+  for (const k of filteredKeys) {
+    const ids=await getRevIds(locIds, k);
+    revIds.push(...ids);
+  }
+
+  if (!revIds.length) { el.innerHTML='<div class="empty">Sosyal medya verisi yok. Twitter veya Ekşi seçip veri çekin.</div>'; return; }
+
+  let analyses=await sbChunkedIn('review_analysis','review_id,overall_sentiment,sentiment_score','review_id',revIds);
+  if (sentFilter) analyses=analyses.filter(a=>a.overall_sentiment===sentFilter);
+
+  const total=revIds.length;
+  const allAn=await sbChunkedIn('review_analysis','review_id,overall_sentiment','review_id',revIds);
+  const pos=allAn.filter(a=>a.overall_sentiment==='positive').length;
+  const neg=allAn.filter(a=>a.overall_sentiment==='negative').length;
+  document.getElementById('soc-total').textContent=total;
+  document.getElementById('soc-pos').textContent=pos;
+  document.getElementById('soc-neg').textContent=neg;
+
+  const sorted=[...analyses].sort((a,b)=>(a.sentiment_score||50)-(b.sentiment_score||50));
+  const topIds=sentFilter==='positive'
+    ? sorted.slice(-20).reverse().map(a=>a.review_id)
+    : sorted.slice(0,20).map(a=>a.review_id);
+
+  const revs=await sbChunkedIn('reviews','review_id,review_text,review_date,connector_id,location_id,source_url','review_id',topIds);
+  const amap={};analyses.forEach(a=>amap[a.review_id]=a);
+  const rmap={};revs.forEach(r=>rmap[r.review_id]=r);
+
+  el.innerHTML=topIds.map(id=>{
+    const r=rmap[id],a=amap[id]; if(!r) return '';
+    return `<div class="rv">
+      <div class="rv-meta">
+        <span class="rv-score" style="color:${scoreColor(a?.sentiment_score||50)}">${a?.sentiment_score||'—'}</span>
+        ${platformBadge(r.connector_id)}
+        <span class="rv-loc">${locName(r.location_id)}</span>
+        <span class="rv-date">${fdate(r.review_date)}</span>
+        ${r.source_url?`<a href="${r.source_url}" target="_blank" style="font-size:11px;color:var(--navy)">Kaynağa git →</a>`:''}
+      </div>
+      <div class="rv-text">${truncate(r.review_text)}</div>
+    </div>`;
+  }).join('')||'<div class="empty">Yorum bulunamadı</div>';
+}
+
+// ── FETCH ──────────────────────────────────────────────────
+async function triggerFetch() {
+  const el=document.getElementById('fetch-result');
+  const dateFrom=document.getElementById('date-from').value;
+  const dateTo=document.getElementById('date-to').value;
+  const twitter=document.getElementById('chk-twitter').checked;
+  const eksi=document.getElementById('chk-eksi').checked;
+  const secret='KadirovaCadno:36';
+
+  el.textContent='⏳ GMaps çekimi başlatıldı...'; el.style.color='var(--muted)';
+
+  // GMaps çekimi
+  await fetch(`${API_BASE}/demo/start-fetch`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ user_id:uid, brand_id:brandId, fetch_type:'gmaps' })
+  }).catch(()=>{});
+
+  // Sosyal medya
+  if (twitter||eksi) {
+    const sources=[];
+    if (twitter) sources.push('twitter');
+    if (eksi) sources.push('eksi');
+    await fetch(`${API_BASE}/demo/save-aliases`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ user_id:uid, brand_id:brandId, search_terms:[], exclude_terms:[], sources })
+    }).catch(()=>{});
+    await fetch(`${API_BASE}/demo/start-fetch`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ user_id:uid, brand_id:brandId, fetch_type:'social' })
+    }).catch(()=>{});
+    el.textContent='⏳ Sosyal medya çekimi de başlatıldı. Analiz arka planda devam ediyor...';
+  } else {
+    el.textContent='⏳ Çekim arka planda devam ediyor...';
+  }
+
+  // 60 saniye sonra yenile
+  setTimeout(()=>{ el.textContent='✓ Tamamlandı, veriler yenileniyor...'; el.style.color='var(--green)'; loadOverview(); }, 60000);
+}
+</script>
+</body>
+</html>

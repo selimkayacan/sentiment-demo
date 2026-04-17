@@ -523,7 +523,7 @@ h2{font-family:'DM Serif Display',serif;font-size:38px;line-height:1.1;letter-sp
 
 <script>
 const API_BASE = 'https://web-production-f48f6.up.railway.app';
-const GMAPS_URL = 'https://gmaps-connector.up.railway.app'; // Railway'den güncelle
+// Lokasyon araması analysis engine proxy üzerinden geçer — secret gizli kalır
 
 // URL'den user_id al
 const params = new URLSearchParams(window.location.search);
@@ -590,7 +590,7 @@ async function checkExistingSetup() {
 
     // Analiz tamamlanmışsa dashboard'a yönlendir
     if (s.analyzed_count > 0) {
-      window.location.href = `/demo/dashboard?uid=${USER_ID}`;
+      window.location.href = `../../dashboard.html?uid=${USER_ID}`;
     }
   } catch(e) {
     console.error('Status check failed', e);
@@ -641,8 +641,8 @@ async function searchLoc() {
 
   try {
     const resp = await fetch(
-      `${GMAPS_URL}/search?q=${encodeURIComponent(q)}&secret=${encodeURIComponent(APP_SECRET_FROM_ENV || '')}`,
-      { signal: AbortSignal.timeout(10000) }
+      `${API_BASE}/demo/search-location?q=${encodeURIComponent(q)}`,
+      { signal: AbortSignal.timeout(12000) }
     );
     const data = await resp.json();
     renderLocResults(data.results || []);
@@ -878,7 +878,7 @@ function startWaitingAnimation() {
       clearInterval(interval);
       // Dashboard'a yönlendir
       setTimeout(() => {
-        window.location.href = `/demo/dashboard?uid=${USER_ID}`;
+        window.location.href = `../../dashboard.html?uid=${USER_ID}`;
       }, 2000);
     }
   }, 8000);
