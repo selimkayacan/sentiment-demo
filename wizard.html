@@ -611,6 +611,7 @@ function goStep(n) {
   });
   currentStep = n;
   window.scrollTo({top:0,behavior:'smooth'});
+  if (n === 6) buildLocSummary();
 }
 
 // ── ADIM 2 ────────────────────────────────────────────────────
@@ -885,11 +886,7 @@ function startWaitingAnimation() {
 }
 
 // ── STEP PAGE HOOKS ───────────────────────────────────────────
-const origGoStep = goStep;
-function goStep(n) {
-  origGoStep(n);
-  if (n === 6) buildLocSummary();
-}
+
 
 // ── YARDIMCI ─────────────────────────────────────────────────
 async function api(path, method='GET', body=null) {
