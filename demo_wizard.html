@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Kurulum — Marka Algı Analizi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#0f0f0f;--paper:#f5f0e8;--accent:#c8410a;
+  --accent2:#1e4d8c;--muted:#7a7060;--border:#d4cfc4;
+  --white:#fff;--green:#16a34a;
+}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;min-height:100vh}
+
+/* LAYOUT */
+.wizard-layout{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{
+  background:var(--ink);padding:40px 32px;
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow:hidden;
+}
+.sidebar-logo{
+  font-family:'DM Serif Display',serif;font-size:16px;
+  color:var(--paper);margin-bottom:48px;
+}
+.sidebar-logo span{color:#c8410a}
+.step-list{flex:1}
+.step-item{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:12px 0;cursor:default;
+}
+.step-item+.step-item{border-top:1px solid rgba(255,255,255,0.06)}
+.step-num{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;margin-top:1px;
+  border:1.5px solid rgba(255,255,255,0.15);
+  color:rgba(255,255,255,0.3);transition:all .3s;
+}
+.step-item.active .step-num{border-color:#c8410a;background:#c8410a;color:#fff}
+.step-item.done .step-num{border-color:#16a34a;background:#16a34a;color:#fff}
+.step-info{}
+.step-label{font-size:13px;font-weight:500;color:rgba(255,255,255,0.3);transition:color .3s;line-height:1.3}
+.step-item.active .step-label{color:#fff}
+.step-item.done .step-label{color:rgba(255,255,255,0.5)}
+.step-sub{font-size:11px;color:rgba(255,255,255,0.2);margin-top:3px}
+.step-item.active .step-sub{color:rgba(255,255,255,0.4)}
+
+.sidebar-footer{margin-top:32px;font-size:12px;color:rgba(255,255,255,0.2);line-height:1.6}
+
+/* MAIN */
+.main{padding:64px 80px;max-width:720px}
+.step-page{display:none}
+.step-page.active{display:block;animation:fadeUp .4s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.step-tag{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.step-tag::before{content:'';width:20px;height:1.5px;background:var(--accent)}
+h2{font-family:'DM Serif Display',serif;font-size:38px;line-height:1.1;letter-spacing:-0.5px;margin-bottom:12px}
+.step-desc{font-size:16px;color:var(--muted);line-height:1.7;margin-bottom:40px;max-width:500px}
+
+/* INPUTS */
+.field{margin-bottom:20px}
+.field label{display:block;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.field input[type=text],.field input[type=email]{
+  width:100%;max-width:440px;padding:13px 16px;
+  border:1.5px solid var(--border);border-radius:3px;
+  font-size:15px;font-family:inherit;color:var(--ink);background:var(--white);
+  transition:border-color .2s;outline:none;
+}
+.field input:focus{border-color:var(--accent2)}
+.field-note{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* KEYWORD CHIPS */
+.chips-container{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;min-height:40px}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 12px;background:var(--ink);color:var(--paper);
+  border-radius:3px;font-size:13px;font-weight:500;
+}
+.chip.exclude-chip{background:var(--accent);color:#fff}
+.chip-remove{
+  cursor:pointer;opacity:.5;font-size:16px;line-height:1;
+  transition:opacity .2s;border:none;background:none;color:inherit;
+}
+.chip-remove:hover{opacity:1}
+.chip-input-row{display:flex;gap:8px;max-width:440px}
+.chip-input-row input{
+  flex:1;padding:10px 14px;
+  border:1.5px solid var(--border);border-radius:3px;
+  font-size:14px;font-family:inherit;outline:none;background:var(--white);
+}
+.chip-input-row input:focus{border-color:var(--accent2)}
+.chip-add-btn{
+  padding:10px 16px;border:1.5px solid var(--border);border-radius:3px;
+  background:none;cursor:pointer;font-size:20px;color:var(--muted);
+  transition:all .2s;flex-shrink:0;
+}
+.chip-add-btn:hover{border-color:var(--ink);color:var(--ink)}
+
+/* SOURCE TOGGLES */
+.source-toggles{display:flex;flex-direction:column;gap:12px;max-width:440px}
+.source-toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;
+  border:1.5px solid var(--border);border-radius:4px;
+  cursor:pointer;transition:all .2s;background:var(--white);
+}
+.source-toggle.selected{border-color:var(--accent2);background:#1e4d8c08}
+.source-toggle.locked{cursor:default;opacity:.6}
+.source-toggle-left{display:flex;align-items:center;gap:12px}
+.source-icon-box{font-size:22px}
+.source-name{font-size:15px;font-weight:600}
+.source-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.toggle-check{
+  width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  transition:all .2s;flex-shrink:0;
+}
+.source-toggle.selected .toggle-check{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.source-toggle.locked .toggle-check{background:#e2e8f0;border-color:#e2e8f0;color:var(--muted)}
+
+/* DATE DISPLAY */
+.date-display{
+  padding:24px 28px;border:1.5px solid var(--border);border-radius:4px;
+  background:var(--white);max-width:440px;
+  display:flex;align-items:center;gap:16px;
+}
+.date-icon{font-size:32px}
+.date-range{font-size:17px;font-weight:600}
+.date-note{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* LOCATION SEARCH */
+.search-row{display:flex;gap:8px;max-width:440px;margin-bottom:12px}
+.search-row input{
+  flex:1;padding:13px 16px;
+  border:1.5px solid var(--border);border-radius:3px;
+  font-size:14px;font-family:inherit;outline:none;background:var(--white);
+}
+.search-row input:focus{border-color:var(--accent2)}
+.search-btn{
+  padding:13px 20px;background:var(--ink);color:var(--paper);
+  border:none;border-radius:3px;cursor:pointer;font-size:15px;
+  font-family:inherit;font-weight:500;transition:all .2s;white-space:nowrap;
+}
+.search-btn:hover{background:var(--accent2)}
+.search-btn:disabled{opacity:.5;cursor:default}
+
+.loc-results{max-width:440px;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:20px;display:none}
+.loc-result{
+  padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;gap:12px;background:var(--white);
+  transition:background .15s;
+}
+.loc-result:last-child{border-bottom:none}
+.loc-result:hover{background:#f0ebe0}
+.loc-result.selected-loc{background:#1e4d8c10;border-left:3px solid var(--accent2)}
+.loc-result-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.loc-result-name{font-size:14px;font-weight:600;margin-bottom:2px}
+.loc-result-addr{font-size:12px;color:var(--muted)}
+.loc-result-check{margin-left:auto;font-size:18px;color:var(--accent2);display:none}
+.loc-result.selected-loc .loc-result-check{display:block}
+
+.selected-locs{max-width:440px;margin-bottom:16px}
+.selected-loc-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;background:var(--white);
+  border:1.5px solid var(--accent2);border-radius:3px;margin-bottom:8px;
+}
+.sel-loc-icon{font-size:18px}
+.sel-loc-name{font-size:14px;font-weight:600;flex:1}
+.sel-loc-addr{font-size:12px;color:var(--muted)}
+.sel-loc-remove{
+  width:24px;height:24px;border-radius:50%;border:1px solid var(--border);
+  background:none;cursor:pointer;font-size:14px;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.sel-loc-remove:hover{background:#fee2e2;border-color:#f87171;color:#c8410a}
+
+.loc-limit-note{font-size:13px;color:var(--accent);font-weight:500;margin-bottom:12px;display:none}
+
+/* SUMMARY */
+.summary-card{
+  padding:24px 28px;border:1.5px solid var(--border);border-radius:4px;
+  background:var(--white);max-width:560px;margin-bottom:16px;
+}
+.summary-card h3{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+.summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+.summary-row:last-child{border-bottom:none}
+.summary-row-label{color:var(--muted)}
+.summary-row-val{font-weight:500;text-align:right;max-width:300px}
+
+/* WAITING */
+.waiting-box{
+  max-width:500px;padding:40px;border:1.5px solid var(--border);border-radius:8px;
+  background:var(--white);text-align:center;
+}
+.waiting-icon{font-size:48px;margin-bottom:16px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.waiting-title{font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:8px}
+.waiting-desc{font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:24px}
+.waiting-steps{text-align:left;border-top:1px solid var(--border);padding-top:20px}
+.waiting-step{
+  display:flex;align-items:center;gap:12px;padding:10px 0;
+  font-size:14px;color:var(--muted);
+}
+.waiting-step.done-step{color:var(--green)}
+.ws-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s}
+.waiting-step.done-step .ws-dot{background:var(--green)}
+.waiting-step.active-step{color:var(--ink)}
+.waiting-step.active-step .ws-dot{background:var(--accent);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:12px;margin-top:40px}
+.btn-primary{
+  padding:14px 32px;background:var(--ink);color:var(--paper);
+  border:none;border-radius:3px;cursor:pointer;
+  font-family:inherit;font-size:15px;font-weight:500;
+  transition:all .2s;display:flex;align-items:center;gap:8px;
+}
+.btn-primary:hover{background:var(--accent)}
+.btn-primary:disabled{opacity:.4;cursor:default;transform:none!important}
+.btn-secondary{
+  padding:14px 24px;background:none;color:var(--muted);
+  border:1.5px solid var(--border);border-radius:3px;
+  cursor:pointer;font-family:inherit;font-size:15px;
+  transition:all .2s;
+}
+.btn-secondary:hover{border-color:var(--ink);color:var(--ink)}
+
+.alert{padding:12px 16px;border-radius:3px;font-size:13px;margin-top:12px;display:none;max-width:440px}
+.alert-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.alert-success{background:#dcfce7;color:#166534;border:1px solid #86efac}
+
+@media(max-width:768px){
+  .wizard-layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .main{padding:40px 24px}
+  h2{font-size:28px}
+}
+</style>
+</head>
+<body>
+
+<div class="wizard-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">marka <span>algı</span></div>
+    <div class="step-list" id="step-list">
+      <div class="step-item active" data-step="1">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <div class="step-label">Marka Adı</div>
+          <div class="step-sub">Hangi markayı analiz ediyorsunuz?</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="2">
+        <div class="step-num">2</div>
+        <div class="step-info">
+          <div class="step-label">Şube Seçimi</div>
+          <div class="step-sub">3 lokasyon seçin</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="3">
+        <div class="step-num">3</div>
+        <div class="step-info">
+          <div class="step-label">Arama Kriterleri</div>
+          <div class="step-sub">Arama ve hariç tutma</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="4">
+        <div class="step-num">4</div>
+        <div class="step-info">
+          <div class="step-label">Veri Kaynakları</div>
+          <div class="step-sub">Twitter, Ekşi Sözlük</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="5">
+        <div class="step-num">5</div>
+        <div class="step-info">
+          <div class="step-label">Tarih Aralığı</div>
+          <div class="step-sub">Analiz dönemi</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="6">
+        <div class="step-num">6</div>
+        <div class="step-info">
+          <div class="step-label">Lokasyon Onayı</div>
+          <div class="step-sub">Google Maps çekimi</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="7">
+        <div class="step-num">7</div>
+        <div class="step-info">
+          <div class="step-label">Sosyal Medya Onayı</div>
+          <div class="step-sub">Twitter & Ekşi çekimi</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="8">
+        <div class="step-num">8</div>
+        <div class="step-info">
+          <div class="step-label">Veriler Hazırlanıyor</div>
+          <div class="step-sub">Analiz süreci</div>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      Demo platformu · 7 günlük erişim<br>
+      Her şey şifreli ve güvenli
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ADIM 1: Marka Adı -->
+    <div class="step-page active" id="step-1">
+      <div class="step-tag">Adım 1 / 8</div>
+      <h2>Hangi markayı analiz etmek istiyorsunuz?</h2>
+      <p class="step-desc">Müşteri algısını ölçmek istediğiniz marka veya şirket adını girin.</p>
+      <div class="field">
+        <label>Marka Adı</label>
+        <input type="text" id="brand-name-input" placeholder="Örn: Lacoste, Zara, Migros..." autocomplete="off"
+               oninput="document.getElementById('brand-name-preview').textContent=this.value||'Markanız'">
+        <div class="field-note">Tam marka adını kullanın. Kısa adlar da çalışır (örn: Cem'in yeri)</div>
+      </div>
+      <div class="alert alert-error" id="step1-err"></div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="goStep2()">Devam Et →</button>
+      </div>
+    </div>
+
+    <!-- ADIM 2: Lokasyon -->
+    <div class="step-page" id="step-2">
+      <div class="step-tag">Adım 2 / 8</div>
+      <h2>3 şube seçin</h2>
+      <p class="step-desc">Google Maps'ten <strong id="brand-name-preview">Markanız</strong> için 3 lokasyon seçin. Bu lokasyonlar için yorum analizi yapılacak.</p>
+      
+      <div id="selected-locs-container"></div>
+      <div class="loc-limit-note" id="loc-limit-note">✓ 3 lokasyon seçildi. Devam edebilirsiniz.</div>
+
+      <div class="search-row">
+        <input type="text" id="loc-search" placeholder="Örn: Lacoste Nişantaşı İstanbul"
+               onkeydown="if(event.key==='Enter')searchLoc()">
+        <button class="search-btn" id="loc-search-btn" onclick="searchLoc()">Ara</button>
+      </div>
+      <div class="loc-results" id="loc-results"></div>
+      <div class="alert alert-error" id="step2-err"></div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="goStep(1)">← Geri</button>
+        <button class="btn-primary" onclick="goStep3()">Devam Et →</button>
+      </div>
+    </div>
+
+    <!-- ADIM 3: Arama Kriterleri -->
+    <div class="step-page" id="step-3">
+      <div class="step-tag">Adım 3 / 8</div>
+      <h2>Arama kriterleri</h2>
+      <p class="step-desc">Twitter ve Ekşi'de aramak istediğiniz kelimeleri ve hariç tutmak istediklerinizi belirtin. (marka adı zaten dahil)</p>
+
+      <div class="field">
+        <label>Ek Arama Terimleri <span style="font-weight:400;text-transform:none">(max 3)</span></label>
+        <div class="chips-container" id="search-chips"></div>
+        <div class="chip-input-row">
+          <input type="text" id="search-term-input" placeholder="Örn: müşteri hizmetleri, iade..."
+                 onkeydown="if(event.key==='Enter')addSearchTerm()">
+          <button class="chip-add-btn" onclick="addSearchTerm()">+</button>
+        </div>
+        <div class="field-note">Boş bırakırsanız sadece marka adıyla arama yapılır</div>
+      </div>
+
+      <div class="field" style="margin-top:28px">
+        <label>Hariç Tut <span style="font-weight:400;text-transform:none">(max 3)</span></label>
+        <div class="chips-container" id="exclude-chips"></div>
+        <div class="chip-input-row">
+          <input type="text" id="exclude-term-input" placeholder="Örn: parfüm, aksesuar..."
+                 onkeydown="if(event.key==='Enter')addExcludeTerm()">
+          <button class="chip-add-btn" onclick="addExcludeTerm()">+</button>
+        </div>
+        <div class="field-note">Bu kelimeleri içeren yorumlar analize dahil edilmez</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="goStep(2)">← Geri</button>
+        <button class="btn-primary" onclick="goStep(4)">Devam Et →</button>
+      </div>
+    </div>
+
+    <!-- ADIM 4: Kaynaklar -->
+    <div class="step-page" id="step-4">
+      <div class="step-tag">Adım 4 / 8</div>
+      <h2>Veri kaynakları</h2>
+      <p class="step-desc">Hangi platformlardan veri çekilsin? Google Maps şube yorumları otomatik dahildir.</p>
+
+      <div class="source-toggles">
+        <div class="source-toggle locked selected">
+          <div class="source-toggle-left">
+            <div class="source-icon-box">🗺️</div>
+            <div>
+              <div class="source-name">Google Maps</div>
+              <div class="source-sub">Şube yorumları — otomatik dahil</div>
+            </div>
+          </div>
+          <div class="toggle-check">✓</div>
+        </div>
+        <div class="source-toggle" id="toggle-twitter" onclick="toggleSource('twitter')">
+          <div class="source-toggle-left">
+            <div class="source-icon-box">𝕏</div>
+            <div>
+              <div class="source-name">Twitter / X</div>
+              <div class="source-sub">Güncel paylaşımlar ve tepkiler</div>
+            </div>
+          </div>
+          <div class="toggle-check" id="check-twitter"></div>
+        </div>
+        <div class="source-toggle" id="toggle-eksi" onclick="toggleSource('eksi')">
+          <div class="source-toggle-left">
+            <div class="source-icon-box">📖</div>
+            <div>
+              <div class="source-name">Ekşi Sözlük</div>
+              <div class="source-sub">Uzun form kullanıcı görüşleri</div>
+            </div>
+          </div>
+          <div class="toggle-check" id="check-eksi"></div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:32px">
+        <button class="btn-secondary" onclick="goStep(3)">← Geri</button>
+        <button class="btn-primary" onclick="goStep(5)">Devam Et →</button>
+      </div>
+    </div>
+
+    <!-- ADIM 5: Tarih -->
+    <div class="step-page" id="step-5">
+      <div class="step-tag">Adım 5 / 8</div>
+      <h2>Analiz dönemi</h2>
+      <p class="step-desc">Demo için aşağıdaki tarih aralığındaki veriler analiz edilecektir.</p>
+
+      <div class="date-display">
+        <div class="date-icon">📅</div>
+        <div>
+          <div class="date-range">1 Haziran 2025 — 31 Aralık 2025</div>
+          <div class="date-note">Bu dönemdeki yorum ve paylaşımlar toplanacak</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="goStep(4)">← Geri</button>
+        <button class="btn-primary" onclick="goStep(6)">Devam Et →</button>
+      </div>
+    </div>
+
+    <!-- ADIM 6: Lokasyon Özeti + GMaps Çekim -->
+    <div class="step-page" id="step-6">
+      <div class="step-tag">Adım 6 / 8</div>
+      <h2>Lokasyonlarınızı onaylayın</h2>
+      <p class="step-desc">Aşağıdaki şubeler için Google Maps yorumları çekilecek. Onayladıktan sonra veri toplama başlar.</p>
+
+      <div class="summary-card" id="loc-summary"></div>
+
+      <div class="alert alert-error" id="step6-err"></div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="goStep(5)">← Geri</button>
+        <button class="btn-primary" id="start-gmaps-btn" onclick="startGmaps()">
+          ✓ Onayla ve Google Maps Çekimini Başlat
+        </button>
+      </div>
+    </div>
+
+    <!-- ADIM 7: Sosyal Medya Özeti + Çekim -->
+    <div class="step-page" id="step-7">
+      <div class="step-tag">Adım 7 / 8</div>
+      <h2>Sosyal medya kriterlerini onaylayın</h2>
+      <p class="step-desc">Aşağıdaki kriterlere göre Twitter ve Ekşi'den veri toplanacak.</p>
+
+      <div class="summary-card" id="social-summary"></div>
+
+      <div class="alert alert-error" id="step7-err"></div>
+      <div class="btn-row">
+        <button class="btn-primary" id="start-social-btn" onclick="startSocial()">
+          ✓ Onayla ve Sosyal Medya Çekimini Başlat
+        </button>
+      </div>
+    </div>
+
+    <!-- ADIM 8: Bekleme -->
+    <div class="step-page" id="step-8">
+      <div class="step-tag">Adım 8 / 8</div>
+      <div class="waiting-box">
+        <div class="waiting-icon">⚙️</div>
+        <div class="waiting-title">Veriler hazırlanıyor</div>
+        <p class="waiting-desc">
+          Veri toplama ve yapay zeka analizi arka planda çalışıyor.
+          Bu işlem 5–15 dakika sürebilir.<br><br>
+          Tamamlandığında <strong id="waiting-email"></strong> adresine bildirim gönderilecek.
+        </p>
+        <div class="waiting-steps">
+          <div class="waiting-step active-step" id="ws-gmaps">
+            <div class="ws-dot"></div>Google Maps yorumları toplanıyor
+          </div>
+          <div class="waiting-step" id="ws-social">
+            <div class="ws-dot"></div>Twitter & Ekşi verileri toplanıyor
+          </div>
+          <div class="waiting-step" id="ws-ai">
+            <div class="ws-dot"></div>Yapay zeka analizi yapılıyor
+          </div>
+          <div class="waiting-step" id="ws-done">
+            <div class="ws-dot"></div>Dashboard hazırlanıyor
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const API_BASE = 'https://web-production-f48f6.up.railway.app';
+const GMAPS_URL = 'https://gmaps-connector.up.railway.app'; // Railway'den güncelle
+
+// URL'den user_id al
+const params = new URLSearchParams(window.location.search);
+const USER_ID = params.get('uid') || '';
+const TOKEN   = params.get('token') || '';
+
+let state = {
+  brandId: null,
+  brandName: '',
+  locations: [],
+  searchTerms: [],
+  excludeTerms: [],
+  sources: [],
+  email: '',
+};
+
+// ── INIT ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  if (!USER_ID) {
+    alert('Geçersiz bağlantı. Lütfen kayıt olun.');
+    window.location.href = '/';
+    return;
+  }
+
+  // Token varsa önce doğrula
+  if (TOKEN) {
+    try {
+      const r = await api('/demo/confirm', 'POST', { token: TOKEN, user_id: USER_ID });
+      if (r.status === 'ok') {
+        state.email = r.email || '';
+        // Zaten marka var mı?
+        await checkExistingSetup();
+      }
+    } catch(e) {
+      alert('Link geçersiz veya süresi dolmuş.');
+      window.location.href = '/';
+    }
+  } else {
+    // Direkt wizard açılmış — status kontrol
+    await checkExistingSetup();
+  }
+});
+
+async function checkExistingSetup() {
+  try {
+    const s = await api(`/demo/status?uid=${USER_ID}`, 'GET');
+    state.email = s.email || '';
+    document.getElementById('waiting-email').textContent = s.email || '';
+
+    if (s.is_blocked) {
+      alert('Bu hesap engellenmiştir.');
+      window.location.href = '/';
+      return;
+    }
+
+    if (s.brand_id) {
+      state.brandId = s.brand_id;
+      state.brandName = s.brand_name || '';
+      state.sources = s.sources || [];
+      state.locations = s.locations || [];
+      document.getElementById('brand-name-input').value = state.brandName;
+      document.getElementById('brand-name-preview').textContent = state.brandName;
+    }
+
+    // Analiz tamamlanmışsa dashboard'a yönlendir
+    if (s.analyzed_count > 0) {
+      window.location.href = `/demo/dashboard?uid=${USER_ID}`;
+    }
+  } catch(e) {
+    console.error('Status check failed', e);
+  }
+}
+
+// ── NAVİGASYON ────────────────────────────────────────────────
+let currentStep = 1;
+
+function goStep(n) {
+  document.querySelectorAll('.step-page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`step-${n}`).classList.add('active');
+  document.querySelectorAll('.step-item').forEach(si => {
+    const sn = parseInt(si.dataset.step);
+    si.classList.remove('active','done');
+    if (sn === n) si.classList.add('active');
+    else if (sn < n) si.classList.add('done');
+  });
+  currentStep = n;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── ADIM 2 ────────────────────────────────────────────────────
+async function goStep2() {
+  const name = document.getElementById('brand-name-input').value.trim();
+  if (!name) { showAlert('step1-err','Marka adını giriniz'); return; }
+
+  state.brandName = name;
+  document.getElementById('brand-name-preview').textContent = name;
+
+  try {
+    const r = await api('/demo/setup-brand', 'POST', { user_id: USER_ID, brand_name: name });
+    state.brandId = r.brand_id;
+    goStep(2);
+  } catch(e) {
+    showAlert('step1-err', e.message || 'Hata oluştu');
+  }
+}
+
+// ── LOKASYON ARAMA ────────────────────────────────────────────
+async function searchLoc() {
+  if (state.locations.length >= 3) return;
+  const q = document.getElementById('loc-search').value.trim();
+  if (!q) return;
+
+  const btn = document.getElementById('loc-search-btn');
+  btn.disabled = true; btn.textContent = 'Aranıyor...';
+
+  try {
+    const resp = await fetch(
+      `${GMAPS_URL}/search?q=${encodeURIComponent(q)}&secret=${encodeURIComponent(APP_SECRET_FROM_ENV || '')}`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    const data = await resp.json();
+    renderLocResults(data.results || []);
+  } catch(e) {
+    showAlert('step2-err','Arama başarısız. Lütfen tekrar deneyin.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Ara';
+  }
+}
+
+function renderLocResults(results) {
+  const el = document.getElementById('loc-results');
+  if (!results.length) {
+    el.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:14px">Sonuç bulunamadı. Farklı bir arama deneyin.</div>';
+    el.style.display = 'block';
+    return;
+  }
+  el.innerHTML = results.map((r,i) => {
+    const sel = state.locations.find(l => l.placeId === r.place_id);
+    return `<div class="loc-result ${sel?'selected-loc':''}" id="lr-${i}"
+         onclick="toggleLoc(${i},'${esc(r.name)}','${esc(r.address||'')}','${r.place_id||''}',${r.lat||0},${r.lng||0})">
+      <div class="loc-result-icon">📍</div>
+      <div style="flex:1">
+        <div class="loc-result-name">${r.name}</div>
+        <div class="loc-result-addr">${r.address||''}</div>
+      </div>
+      <div class="loc-result-check">✓</div>
+    </div>`;
+  }).join('');
+  el.style.display = 'block';
+}
+
+function toggleLoc(i, name, address, placeId, lat, lng) {
+  if (state.locations.length >= 3 && !state.locations.find(l => l.placeId === placeId)) return;
+  const idx = state.locations.findIndex(l => l.placeId === placeId);
+  if (idx > -1) {
+    state.locations.splice(idx, 1);
+  } else {
+    state.locations.push({ name, address, placeId, lat, lng });
+  }
+  renderSelectedLocs();
+  // Sonuçları yeniden render et
+  document.querySelectorAll('.loc-result').forEach((el,j) => {
+    const isSelected = state.locations.find(l => el.innerHTML.includes(l.placeId));
+    el.classList.toggle('selected-loc', !!isSelected);
+  });
+}
+
+function removeLoc(idx) {
+  state.locations.splice(idx, 1);
+  renderSelectedLocs();
+}
+
+function renderSelectedLocs() {
+  const el = document.getElementById('selected-locs-container');
+  const limitNote = document.getElementById('loc-limit-note');
+  limitNote.style.display = state.locations.length === 3 ? 'block' : 'none';
+  if (!state.locations.length) { el.innerHTML = ''; return; }
+  el.innerHTML = state.locations.map((l,i) => `
+    <div class="selected-loc-item">
+      <div class="sel-loc-icon">📍</div>
+      <div style="flex:1">
+        <div class="sel-loc-name">${l.name}</div>
+        <div class="sel-loc-addr">${l.address}</div>
+      </div>
+      <button class="sel-loc-remove" onclick="removeLoc(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+async function goStep3() {
+  if (state.locations.length < 1) { showAlert('step2-err','En az 1 lokasyon seçin'); return; }
+  if (state.locations.length > 3) { showAlert('step2-err','En fazla 3 lokasyon seçebilirsiniz'); return; }
+
+  // Lokasyonları backend'e kaydet
+  try {
+    for (const loc of state.locations) {
+      await api('/demo/add-location', 'POST', {
+        user_id: USER_ID, brand_id: state.brandId,
+        name: loc.name, address: loc.address,
+        google_place_id: loc.placeId, lat: loc.lat, lng: loc.lng,
+      });
+    }
+    goStep(3);
+  } catch(e) {
+    showAlert('step2-err', e.message || 'Lokasyon kaydedilemedi');
+  }
+}
+
+// ── ARAMA TERİMLERİ ───────────────────────────────────────────
+function addSearchTerm() {
+  if (state.searchTerms.length >= 3) return;
+  const val = document.getElementById('search-term-input').value.trim();
+  if (!val) return;
+  state.searchTerms.push(val);
+  document.getElementById('search-term-input').value = '';
+  renderChips();
+}
+
+function addExcludeTerm() {
+  if (state.excludeTerms.length >= 3) return;
+  const val = document.getElementById('exclude-term-input').value.trim();
+  if (!val) return;
+  state.excludeTerms.push(val);
+  document.getElementById('exclude-term-input').value = '';
+  renderChips();
+}
+
+function removeSearchTerm(i) { state.searchTerms.splice(i,1); renderChips(); }
+function removeExcludeTerm(i) { state.excludeTerms.splice(i,1); renderChips(); }
+
+function renderChips() {
+  document.getElementById('search-chips').innerHTML = state.searchTerms.map((t,i) =>
+    `<div class="chip">${t}<button class="chip-remove" onclick="removeSearchTerm(${i})">×</button></div>`).join('');
+  document.getElementById('exclude-chips').innerHTML = state.excludeTerms.map((t,i) =>
+    `<div class="chip exclude-chip">${t}<button class="chip-remove" onclick="removeExcludeTerm(${i})">×</button></div>`).join('');
+}
+
+// ── KAYNAKLAR ────────────────────────────────────────────────
+function toggleSource(src) {
+  const idx = state.sources.indexOf(src);
+  if (idx > -1) state.sources.splice(idx,1);
+  else state.sources.push(src);
+  document.getElementById(`toggle-${src}`).classList.toggle('selected', state.sources.includes(src));
+  document.getElementById(`check-${src}`).textContent = state.sources.includes(src) ? '✓' : '';
+}
+
+// ── ADIM 6: LOKASYON ÖZETİ ───────────────────────────────────
+function buildLocSummary() {
+  const el = document.getElementById('loc-summary');
+  el.innerHTML = `<h3>Seçilen Lokasyonlar</h3>` +
+    state.locations.map(l => `
+      <div class="summary-row">
+        <div class="summary-row-label">📍</div>
+        <div class="summary-row-val">${l.name}<br><span style="font-size:12px;color:var(--muted)">${l.address}</span></div>
+      </div>`).join('') +
+    `<div class="summary-row">
+      <div class="summary-row-label">Dönem</div>
+      <div class="summary-row-val">1 Haziran 2025 — 31 Aralık 2025</div>
+    </div>`;
+}
+
+async function startGmaps() {
+  const btn = document.getElementById('start-gmaps-btn');
+  btn.disabled = true; btn.textContent = '⏳ Çekim başlatılıyor...';
+
+  try {
+    await api('/demo/save-aliases', 'POST', {
+      user_id: USER_ID, brand_id: state.brandId,
+      search_terms: state.searchTerms,
+      exclude_terms: state.excludeTerms,
+      sources: state.sources,
+    });
+
+    await api('/demo/start-fetch', 'POST', {
+      user_id: USER_ID, brand_id: state.brandId, fetch_type: 'gmaps'
+    });
+
+    goStep(7);
+    buildSocialSummary();
+  } catch(e) {
+    showAlert('step6-err', e.message || 'Çekim başlatılamadı');
+    btn.disabled = false; btn.textContent = '✓ Onayla ve Google Maps Çekimini Başlat';
+  }
+}
+
+// ── ADIM 7: SOSYAL MEDYA ÖZETİ ───────────────────────────────
+function buildSocialSummary() {
+  const el = document.getElementById('social-summary');
+  const srcNames = { twitter: 'Twitter / X', eksi: 'Ekşi Sözlük' };
+  const selectedSrcs = state.sources.filter(s => ['twitter','eksi'].includes(s));
+
+  el.innerHTML = `<h3>Sosyal Medya Kriterleri</h3>
+    <div class="summary-row">
+      <div class="summary-row-label">Marka</div>
+      <div class="summary-row-val">${state.brandName}</div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-row-label">Kaynaklar</div>
+      <div class="summary-row-val">${selectedSrcs.length ? selectedSrcs.map(s=>srcNames[s]).join(', ') : 'Seçilmedi'}</div>
+    </div>
+    ${state.searchTerms.length ? `<div class="summary-row">
+      <div class="summary-row-label">Ek Arama</div>
+      <div class="summary-row-val">${state.searchTerms.join(', ')}</div>
+    </div>` : ''}
+    ${state.excludeTerms.length ? `<div class="summary-row">
+      <div class="summary-row-label">Hariç Tut</div>
+      <div class="summary-row-val">${state.excludeTerms.join(', ')}</div>
+    </div>` : ''}
+    <div class="summary-row">
+      <div class="summary-row-label">Dönem</div>
+      <div class="summary-row-val">1 Haziran 2025 — 31 Aralık 2025</div>
+    </div>`;
+}
+
+async function startSocial() {
+  const btn = document.getElementById('start-social-btn');
+  btn.disabled = true; btn.textContent = '⏳ Başlatılıyor...';
+
+  if (!state.sources.filter(s=>['twitter','eksi'].includes(s)).length) {
+    // Sosyal medya seçilmemişse direkt 8. adıma
+    goStep(8);
+    startWaitingAnimation();
+    return;
+  }
+
+  try {
+    await api('/demo/start-fetch', 'POST', {
+      user_id: USER_ID, brand_id: state.brandId, fetch_type: 'social'
+    });
+    goStep(8);
+    startWaitingAnimation();
+  } catch(e) {
+    showAlert('step7-err', e.message || 'Çekim başlatılamadı');
+    btn.disabled = false; btn.textContent = '✓ Onayla ve Sosyal Medya Çekimini Başlat';
+  }
+}
+
+// ── BEKLEME ANİMASYONU ────────────────────────────────────────
+function startWaitingAnimation() {
+  document.getElementById('waiting-email').textContent = state.email;
+  const steps = ['ws-gmaps','ws-social','ws-ai','ws-done'];
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i > 0) {
+      document.getElementById(steps[i-1]).classList.remove('active-step');
+      document.getElementById(steps[i-1]).classList.add('done-step');
+    }
+    if (i < steps.length) {
+      document.getElementById(steps[i]).classList.add('active-step');
+      i++;
+    } else {
+      clearInterval(interval);
+      // Dashboard'a yönlendir
+      setTimeout(() => {
+        window.location.href = `/demo/dashboard?uid=${USER_ID}`;
+      }, 2000);
+    }
+  }, 8000);
+}
+
+// ── STEP PAGE HOOKS ───────────────────────────────────────────
+const origGoStep = goStep;
+function goStep(n) {
+  origGoStep(n);
+  if (n === 6) buildLocSummary();
+}
+
+// ── YARDIMCI ─────────────────────────────────────────────────
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(`${API_BASE}${path}`, opts);
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || 'API hatası');
+  return data;
+}
+
+function showAlert(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display='none', 5000);
+}
+
+function esc(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>

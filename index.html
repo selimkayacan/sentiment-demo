@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Marka Algı Analizi — Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#0f0f0f;
+  --paper:#f5f0e8;
+  --accent:#c8410a;
+  --accent2:#1e4d8c;
+  --muted:#7a7060;
+  --border:#d4cfc4;
+  --white:#ffffff;
+}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;overflow-x:hidden}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:20px 48px;
+  display:flex;justify-content:space-between;align-items:center;
+  background:rgba(245,240,232,0.85);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.logo{font-family:'DM Serif Display',serif;font-size:18px;letter-spacing:-0.3px;color:var(--ink)}
+.logo span{color:var(--accent)}
+.nav-cta{
+  padding:10px 24px;border:1.5px solid var(--ink);border-radius:2px;
+  font-size:14px;font-weight:500;color:var(--ink);text-decoration:none;
+  transition:all .2s;cursor:pointer;background:none;
+}
+.nav-cta:hover{background:var(--ink);color:var(--paper)}
+
+/* HERO */
+.hero{
+  min-height:100vh;
+  display:grid;grid-template-columns:1fr 1fr;
+  padding-top:80px;
+}
+.hero-left{
+  padding:80px 48px 80px 80px;
+  display:flex;flex-direction:column;justify-content:center;
+  position:relative;
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:500;letter-spacing:2px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:32px;
+}
+.hero-tag::before{content:'';width:24px;height:1.5px;background:var(--accent)}
+h1{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(42px,5vw,68px);
+  line-height:1.08;
+  letter-spacing:-1.5px;
+  color:var(--ink);
+  margin-bottom:28px;
+}
+h1 em{color:var(--accent);font-style:italic}
+.hero-sub{
+  font-size:17px;font-weight:300;color:var(--muted);
+  line-height:1.7;max-width:440px;margin-bottom:48px;
+}
+.hero-form{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:32px;
+  max-width:440px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.06);
+}
+.form-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.form-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:500;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field input{
+  width:100%;padding:11px 14px;
+  border:1.5px solid var(--border);border-radius:2px;
+  font-size:14px;font-family:inherit;color:var(--ink);
+  background:var(--paper);transition:border-color .2s;outline:none;
+}
+.field input:focus{border-color:var(--accent2)}
+.field input::placeholder{color:#b0a898}
+.submit-btn{
+  width:100%;padding:13px;
+  background:var(--ink);color:var(--paper);
+  border:none;border-radius:2px;
+  font-family:inherit;font-size:15px;font-weight:500;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:8px;
+}
+.submit-btn:hover{background:var(--accent);transform:translateY(-1px)}
+.submit-btn:disabled{opacity:.5;cursor:default;transform:none}
+.form-note{font-size:12px;color:var(--muted);margin-top:12px;text-align:center}
+.success-msg{
+  display:none;text-align:center;padding:20px;
+  border:1.5px solid #c8410a33;background:#c8410a08;border-radius:4px;
+}
+.success-msg h3{font-size:16px;margin-bottom:8px;color:var(--accent)}
+.success-msg p{font-size:14px;color:var(--muted);line-height:1.6}
+.error-msg{
+  display:none;font-size:13px;color:#c8410a;
+  margin-top:10px;text-align:center;padding:10px;
+  background:#c8410a10;border-radius:2px;
+}
+
+/* HERO RIGHT */
+.hero-right{
+  background:var(--ink);
+  position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  padding:80px 60px;
+}
+.hero-right::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 30% 50%, #1e4d8c22 0%, transparent 60%),
+             radial-gradient(ellipse at 70% 80%, #c8410a18 0%, transparent 50%);
+}
+.demo-card{
+  position:relative;z-index:1;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:8px;padding:32px;width:100%;max-width:380px;
+  backdrop-filter:blur(10px);
+}
+.dc-header{
+  display:flex;align-items:center;gap:12px;margin-bottom:24px;
+  padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.dc-dot{width:10px;height:10px;border-radius:50%;background:#c8410a;box-shadow:0 0 8px #c8410a88}
+.dc-title{font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.5px}
+.dc-brand{font-size:16px;font-weight:600;color:#fff;margin-left:auto}
+.dc-score-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;
+}
+.dc-score{
+  background:rgba(255,255,255,0.04);border-radius:4px;
+  padding:16px 12px;text-align:center;
+  border:1px solid rgba(255,255,255,0.06);
+}
+.dc-score-num{
+  font-family:'DM Serif Display',serif;font-size:28px;
+  line-height:1;margin-bottom:4px;
+}
+.dc-score-num.pos{color:#4ade80}
+.dc-score-num.neu{color:#facc15}
+.dc-score-num.neg{color:#f87171}
+.dc-score-label{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.5px;text-transform:uppercase}
+.dc-bars{margin-bottom:20px}
+.dc-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dc-bar-label{font-size:12px;color:rgba(255,255,255,0.5);width:80px;flex-shrink:0}
+.dc-bar-track{flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
+.dc-bar-fill{height:100%;border-radius:2px;transition:width 1s ease}
+.dc-bar-val{font-size:12px;color:rgba(255,255,255,0.6);width:32px;text-align:right}
+.dc-sources{
+  display:flex;gap:8px;flex-wrap:wrap;
+}
+.dc-source{
+  font-size:11px;padding:4px 10px;border-radius:20px;
+  border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);
+  letter-spacing:0.3px;
+}
+.dc-source.active{background:rgba(200,65,10,0.2);border-color:rgba(200,65,10,0.4);color:#f87171}
+
+/* FEATURES */
+.features{
+  padding:120px 80px;
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;
+  border-top:1px solid var(--border);
+}
+.feat{padding:0}
+.feat-num{
+  font-family:'DM Serif Display',serif;font-size:48px;
+  color:var(--border);line-height:1;margin-bottom:20px;
+}
+.feat-title{font-size:18px;font-weight:600;margin-bottom:12px}
+.feat-text{font-size:15px;color:var(--muted);line-height:1.7}
+
+/* SOURCES */
+.sources-section{
+  padding:80px;
+  background:var(--ink);
+  display:grid;grid-template-columns:1fr 1fr;gap:60px;
+  align-items:center;
+}
+.sources-left h2{
+  font-family:'DM Serif Display',serif;font-size:42px;
+  line-height:1.1;color:var(--paper);margin-bottom:20px;
+  letter-spacing:-0.5px;
+}
+.sources-left p{font-size:16px;color:rgba(245,240,232,0.5);line-height:1.7;max-width:380px}
+.source-list{display:flex;flex-direction:column;gap:16px}
+.source-item{
+  padding:20px 24px;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:4px;background:rgba(255,255,255,0.03);
+  display:flex;align-items:flex-start;gap:16px;
+}
+.source-icon{font-size:24px;flex-shrink:0;margin-top:2px}
+.source-name{font-size:15px;font-weight:600;color:var(--paper);margin-bottom:4px}
+.source-desc{font-size:13px;color:rgba(245,240,232,0.4);line-height:1.5}
+
+/* FOOTER */
+footer{
+  padding:40px 80px;border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.foot-logo{font-family:'DM Serif Display',serif;font-size:16px}
+.foot-logo span{color:var(--accent)}
+.foot-note{font-size:13px;color:var(--muted)}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.hero-left>*{animation:fadeUp .6s both}
+.hero-tag{animation-delay:.1s}
+h1{animation-delay:.2s}
+.hero-sub{animation-delay:.3s}
+.hero-form{animation-delay:.4s}
+
+.bar-anim{animation:barGrow 1.5s ease both}
+@keyframes barGrow{from{width:0}to{}}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;min-height:auto}
+  .hero-left{padding:100px 24px 48px;align-items:center;text-align:center}
+  .hero-right{display:none}
+  .features{grid-template-columns:1fr;padding:60px 24px}
+  .sources-section{grid-template-columns:1fr;padding:60px 24px}
+  footer{flex-direction:column;gap:12px;padding:32px 24px;text-align:center}
+  nav{padding:16px 24px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">marka <span>algı</span> analizi</div>
+  <button class="nav-cta" onclick="document.getElementById('register-form').scrollIntoView({behavior:'smooth'})">
+    Demo Dene →
+  </button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-tag">Ücretsiz Demo</div>
+    <h1>Markanız ne <em>hissettiriyor?</em></h1>
+    <p class="hero-sub">
+      Google Maps yorumları, Ekşi Sözlük ve Twitter/X'teki markanıza ait verileri toplayın,
+      yapay zeka ile analiz edin. Gerçek müşteri algısını dakikalar içinde görün.
+    </p>
+
+    <div class="hero-form" id="register-form">
+      <div class="form-title">7 günlük ücretsiz demo erişimi</div>
+      <div class="form-sub">Kredi kartı gerekmez. Hemen başlayın.</div>
+
+      <div id="form-content">
+        <div class="field">
+          <label>Firma Adı</label>
+          <input type="text" id="company" placeholder="Örn: Acme Perakende A.Ş." autocomplete="organization">
+        </div>
+        <div class="field">
+          <label>İş E-postanız</label>
+          <input type="email" id="email" placeholder="ad.soyad@firma.com" autocomplete="email">
+        </div>
+        <button class="submit-btn" id="submit-btn" onclick="handleRegister()">
+          <span id="btn-text">Demo Başvurusu Yap</span>
+          <span id="btn-arrow">→</span>
+        </button>
+        <div class="form-note">Kayıt olarak gizlilik politikamızı kabul etmiş olursunuz.</div>
+        <div class="error-msg" id="error-msg"></div>
+      </div>
+
+      <div class="success-msg" id="success-msg">
+        <h3>✓ Teşekkürler!</h3>
+        <p>Konfirmasyon linki <strong id="confirm-email"></strong> adresine gönderildi.<br>
+        Mailinizi kontrol edin ve linke tıklayarak devam edin.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="demo-card">
+      <div class="dc-header">
+        <div class="dc-dot"></div>
+        <div class="dc-title">Canlı Analiz</div>
+        <div class="dc-brand">Lacoste TR</div>
+      </div>
+      <div class="dc-score-row">
+        <div class="dc-score">
+          <div class="dc-score-num pos">68%</div>
+          <div class="dc-score-label">Pozitif</div>
+        </div>
+        <div class="dc-score">
+          <div class="dc-score-num neu">21%</div>
+          <div class="dc-score-label">Nötr</div>
+        </div>
+        <div class="dc-score">
+          <div class="dc-score-num neg">11%</div>
+          <div class="dc-score-label">Negatif</div>
+        </div>
+      </div>
+      <div class="dc-bars">
+        <div class="dc-bar-row">
+          <div class="dc-bar-label">Müşteri Hizm.</div>
+          <div class="dc-bar-track"><div class="dc-bar-fill" style="width:72%;background:#4ade80"></div></div>
+          <div class="dc-bar-val">72</div>
+        </div>
+        <div class="dc-bar-row">
+          <div class="dc-bar-label">Ürün Kalitesi</div>
+          <div class="dc-bar-track"><div class="dc-bar-fill" style="width:81%;background:#4ade80"></div></div>
+          <div class="dc-bar-val">81</div>
+        </div>
+        <div class="dc-bar-row">
+          <div class="dc-bar-label">Fiyat/Değer</div>
+          <div class="dc-bar-track"><div class="dc-bar-fill" style="width:44%;background:#facc15"></div></div>
+          <div class="dc-bar-val">44</div>
+        </div>
+        <div class="dc-bar-row">
+          <div class="dc-bar-label">Bekleme Süresi</div>
+          <div class="dc-bar-track"><div class="dc-bar-fill" style="width:58%;background:#facc15"></div></div>
+          <div class="dc-bar-val">58</div>
+        </div>
+        <div class="dc-bar-row">
+          <div class="dc-bar-label">İade Süreci</div>
+          <div class="dc-bar-track"><div class="dc-bar-fill" style="width:33%;background:#f87171"></div></div>
+          <div class="dc-bar-val">33</div>
+        </div>
+      </div>
+      <div class="dc-sources">
+        <div class="dc-source active">Google Maps</div>
+        <div class="dc-source active">Ekşi Sözlük</div>
+        <div class="dc-source active">Twitter/X</div>
+        <div class="dc-source">347 yorum</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="feat">
+    <div class="feat-num">01</div>
+    <div class="feat-title">Çok Kaynaklı Veri</div>
+    <p class="feat-text">Google Maps yorumları, Ekşi Sözlük girdileri ve Twitter/X paylaşımları tek bir analizde birleşir. Hiçbir müşteri sesi kaçmaz.</p>
+  </div>
+  <div class="feat">
+    <div class="feat-num">02</div>
+    <div class="feat-title">Kategori Bazlı Analiz</div>
+    <p class="feat-text">Müşteri hizmetleri, ürün kalitesi, fiyat/değer algısı, bekleme süresi gibi 10+ kategoride ayrı ayrı sentiment skoru.</p>
+  </div>
+  <div class="feat">
+    <div class="feat-num">03</div>
+    <div class="feat-title">Şube Karşılaştırması</div>
+    <p class="feat-text">Hangi şubeniz en iyi performansı gösteriyor? Hangi lokasyonda sorun var? Şube bazlı karşılaştırma ile anında görün.</p>
+  </div>
+</section>
+
+<!-- SOURCES -->
+<section class="sources-section">
+  <div class="sources-left">
+    <h2>Verinin bulunduğu her yerde</h2>
+    <p>Markanız hakkında insanların konuştuğu tüm platformlardan otomatik veri toplama ve analiz.</p>
+  </div>
+  <div class="source-list">
+    <div class="source-item">
+      <div class="source-icon">🗺️</div>
+      <div>
+        <div class="source-name">Google Maps</div>
+        <div class="source-desc">Şube yorumları, puanlar ve müşteri geri bildirimleri. Yüzlerce sayfaya kadar otomatik çekim.</div>
+      </div>
+    </div>
+    <div class="source-item">
+      <div class="source-icon">📖</div>
+      <div>
+        <div class="source-name">Ekşi Sözlük</div>
+        <div class="source-desc">Türkiye'nin en büyük kullanıcı yorumu platformu. Uzun form, derinlikli görüşler.</div>
+      </div>
+    </div>
+    <div class="source-item">
+      <div class="source-icon">𝕏</div>
+      <div>
+        <div class="source-name">Twitter / X</div>
+        <div class="source-desc">Anlık tepkiler, kampanya yorumları ve viral şikayetler. Engagement filtresi ile kaliteli içerik.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-logo">marka <span>algı</span> analizi</div>
+  <div class="foot-note">© 2026 · Demo platformu · 7 günlük ücretsiz erişim</div>
+</footer>
+
+<script>
+const API_BASE = 'https://web-production-f48f6.up.railway.app';
+
+async function handleRegister() {
+  const company = document.getElementById('company').value.trim();
+  const email   = document.getElementById('email').value.trim();
+  const errEl   = document.getElementById('error-msg');
+  const btn     = document.getElementById('submit-btn');
+
+  errEl.style.display = 'none';
+
+  if (!company) { showError('Firma adını giriniz'); return; }
+  if (!email || !email.includes('@')) { showError('Geçerli bir e-posta giriniz'); return; }
+
+  btn.disabled = true;
+  document.getElementById('btn-text').textContent = 'Gönderiliyor...';
+  document.getElementById('btn-arrow').textContent = '⏳';
+
+  try {
+    const resp = await fetch(`${API_BASE}/demo/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, company_name: company }),
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showError(data.error || 'Bir hata oluştu');
+      btn.disabled = false;
+      document.getElementById('btn-text').textContent = 'Demo Başvurusu Yap';
+      document.getElementById('btn-arrow').textContent = '→';
+      return;
+    }
+
+    // Başarı
+    document.getElementById('form-content').style.display = 'none';
+    document.getElementById('confirm-email').textContent = email;
+    document.getElementById('success-msg').style.display = 'block';
+
+  } catch(e) {
+    showError('Bağlantı hatası, lütfen tekrar deneyin');
+    btn.disabled = false;
+    document.getElementById('btn-text').textContent = 'Demo Başvurusu Yap';
+    document.getElementById('btn-arrow').textContent = '→';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// Enter ile submit
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleRegister();
+});
+</script>
+</body>
+</html>
