@@ -590,7 +590,7 @@ async function checkExistingSetup() {
 
     // Analiz tamamlanmışsa dashboard'a yönlendir
     if (s.analyzed_count > 0) {
-      window.location.href = `../../dashboard.html?uid=${USER_ID}`;
+      window.location.href = `./dashboard.html?uid=${USER_ID}`;
     }
   } catch(e) {
     console.error('Status check failed', e);
@@ -879,7 +879,7 @@ function startWaitingAnimation() {
       clearInterval(interval);
       // Dashboard'a yönlendir
       setTimeout(() => {
-        window.location.href = `../../dashboard.html?uid=${USER_ID}`;
+        window.location.href = `./dashboard.html?uid=${USER_ID}`;
       }, 2000);
     }
   }, 8000);
