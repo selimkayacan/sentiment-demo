@@ -404,6 +404,34 @@ h1{animation-delay:.2s}
 <script>
 const API_BASE = 'https://web-production-f48f6.up.railway.app';
 
+// Daha önce demo başlattıysa dashboard'a yönlendir
+(async function checkExistingUser() {
+  const uid = localStorage.getItem('demo_uid');
+  if (!uid) return;
+  try {
+    const resp = await fetch(`${API_BASE}/demo/status?uid=${uid}`);
+    if (!resp.ok) { localStorage.removeItem('demo_uid'); return; }
+    const s = await resp.json();
+    if (s.is_blocked) { localStorage.removeItem('demo_uid'); return; }
+    // Brand var ve analiz edilmişse dashboard'a at
+    if (s.brand_id && s.analyzed_count > 0) {
+      window.location.href = `./dashboard.html?uid=${uid}`;
+      return;
+    }
+    // Brand var ama analiz yok — wizard'a at
+    if (s.brand_id) {
+      window.location.href = `./wizard.html?uid=${uid}`;
+      return;
+    }
+    // Onaylı ama marka yok — wizard'a at
+    if (s.is_confirmed) {
+      window.location.href = `./wizard.html?uid=${uid}`;
+    }
+  } catch(e) {
+    // Bağlantı hatası — formu göster
+  }
+})();
+
 async function handleRegister() {
   const company = document.getElementById('company').value.trim();
   const email   = document.getElementById('email').value.trim();
