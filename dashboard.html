@@ -2,33 +2,30 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Marka Analitik — Demo</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f7f6f2;--white:#fff;--ink:#1c1917;--ink2:#44403c;--muted:#a8a29e;
-  --line:#e7e5e4;--navy:#1e3a5f;--green:#15803d;--red:#b91c1c;--amber:#b45309;
-  --green-bg:#dcfce7;--red-bg:#fee2e2;--amber-bg:#fef3c7;
-  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);--r:12px;
-  font-family:'Cabinet Grotesk',sans-serif;
-}
+:root{--bg:#f7f6f2;--white:#fff;--ink:#1c1917;--ink2:#44403c;--muted:#a8a29e;--line:#e7e5e4;--navy:#1e3a5f;--teal:#0f766e;--green:#15803d;--red:#b91c1c;--amber:#b45309;--blue:#1d4ed8;--green-bg:#dcfce7;--red-bg:#fee2e2;--amber-bg:#fef3c7;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);--r:12px;font-family:'Cabinet Grotesk',sans-serif}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);min-height:100vh}
 #loading-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
-.spinner{width:36px;height:36px;border:3px solid var(--line);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 #app{display:none}
 #app.show{display:block}
-.topbar{background:var(--white);border-bottom:1px solid var(--line);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
-.topbar-logo{font-family:'Fraunces',serif;font-size:17px;color:var(--navy)}
-.topbar-logo span{color:#c8410a}
-.brand-pill{background:var(--navy);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700}
-.demo-badge{background:#fef3c7;color:#b45309;border:1px solid #fde68a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.topbar{background:var(--white);border-bottom:1px solid var(--line);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo{font-family:'Fraunces',serif;font-size:18px;color:var(--navy)}
+.brand-tag{font-size:11px;background:var(--navy);color:#fff;padding:2px 10px;border-radius:20px;font-weight:700}
+.demo-tag{font-size:11px;background:var(--amber-bg);color:var(--amber);border:1px solid #fde68a;padding:2px 10px;border-radius:20px;font-weight:700}
+.topbar-right{display:flex;align-items:center;gap:10px}
 .expire-note{font-size:11px;color:var(--muted)}
-.nav-tabs{background:var(--white);border-bottom:1px solid var(--line);padding:0 28px;display:flex;gap:2px}
-.tab{padding:13px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;transition:all .15s}
+.btn-outline{background:transparent;color:var(--ink2);border:1.5px solid var(--line)}
+.btn-outline:hover{border-color:var(--navy);color:var(--navy)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.nav-tabs{background:var(--white);border-bottom:1px solid var(--line);padding:0 28px;display:flex;gap:2px;overflow-x:auto}
+.tab{padding:13px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;user-select:none}
 .tab:hover{color:var(--ink)}
 .tab.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:700}
 .content{padding:24px 28px;max-width:1280px;margin:0 auto}
@@ -39,88 +36,98 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 .stat-accent{border-top:3px solid var(--navy)}
 .stat-green{border-top:3px solid var(--green)}
 .stat-red{border-top:3px solid var(--red)}
-.stat-amber{border-top:3px solid var(--amber)}
 .stat-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
 .stat-value{font-family:'Fraunces',serif;font-size:36px;color:var(--ink);line-height:1}
 .stat-sub{font-size:12px;color:var(--muted);margin-top:6px}
-.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:20px}
-.card-header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
-.card-title{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-size:13px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em}
 .card-body{padding:20px}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}
-.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:20px}
-.ring-wrap{position:relative;flex-shrink:0}
-.ring-wrap svg{transform:rotate(-90deg)}
-.ring-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.ring-num span:first-child{font-family:'Fraunces',serif;font-size:28px;color:var(--ink)}
-.ring-num span:last-child{font-size:10px;color:var(--muted)}
-.sent-bar{height:8px;border-radius:4px;overflow:hidden;display:flex;margin-bottom:8px}
-.sb-g{background:#15803d;transition:width .8s}
-.sb-a{background:#f59e0b;transition:width .8s}
-.sb-r{background:#b91c1c;transition:width .8s}
-.sent-legend{display:flex;gap:14px;font-size:12px}
-.sl{display:flex;align-items:center;gap:5px}
+.mb20{margin-bottom:20px}
+.mb24{margin-bottom:24px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+.score-ring-wrap{position:relative;flex-shrink:0}
+.score-ring-wrap svg{transform:rotate(-90deg)}
+.score-ring-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-ring-num span:first-child{font-family:'Fraunces',serif;font-size:30px;color:var(--ink)}
+.score-ring-num span:last-child{font-size:10px;color:var(--muted)}
+.sent-bar{height:8px;border-radius:4px;overflow:hidden;display:flex;gap:2px}
+.sb-g{background:var(--green);border-radius:4px 0 0 4px;transition:width .6s}
+.sb-a{background:#f59e0b}
+.sb-r{background:var(--red);border-radius:0 4px 4px 0;transition:width .6s}
+.sent-legend{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.sl{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
 .sl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.tag-grid{display:flex;flex-wrap:wrap;gap:8px}
-.cat-tag{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;border:1.5px solid}
-.cat-pos{background:var(--green-bg);color:var(--green);border-color:#86efac}
-.cat-neu{background:#f1f5f9;color:#475569;border-color:#cbd5e1}
-.cat-neg{background:var(--red-bg);color:var(--red);border-color:#fca5a5}
-.rv{border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:10px}
-.rv-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.rv-score{font-family:'Fraunces',serif;font-size:18px;font-weight:600}
+.review-list{display:flex;flex-direction:column;gap:10px}
+.review-card{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;gap:12px}
+.review-card.positive{border-left:4px solid var(--green)}
+.review-card.negative{border-left:4px solid var(--red)}
+.review-card.neutral{border-left:4px solid #d1d5db}
+.rv-score{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.rv-score.pos{background:var(--green-bg);color:var(--green)}
+.rv-score.neg{background:var(--red-bg);color:var(--red)}
+.rv-score.neu{background:#f3f4f6;color:#6b7280}
+.rv-body{flex:1}
+.rv-text{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:6px;font-style:italic}
+.rv-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rv-meta span{font-size:11px;color:var(--muted)}
+.rv-link{font-size:11px;font-weight:700;color:var(--blue);text-decoration:none}
+.rv-link:hover{text-decoration:underline}
 .rv-platform{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
-.gmaps{background:#e8f5e9;color:#2e7d32}
-.twitter{background:#e3f2fd;color:#1565c0}
-.eksi{background:#fff3e0;color:#e65100}
-.rv-text{font-size:13px;color:var(--ink2);line-height:1.6}
-.rv-date{font-size:11px;color:var(--muted)}
-.rv-loc{font-size:11px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:10px}
-.loc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
-.loc-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);cursor:pointer;transition:border-color .15s}
-.loc-card:hover{border-color:var(--navy)}
-.loc-card.selected{border-color:var(--navy);border-width:2px}
+.rv-platform.gmaps{background:#e8f5e9;color:#2e7d32}
+.rv-platform.twitter{background:#e3f2fd;color:#1565c0}
+.rv-platform.eksi{background:#fff8e1;color:#f57f17}
+.loc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.loc-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
+.loc-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.loc-card.selected{border-color:var(--navy);border-width:2px;background:#f0f4ff}
 .loc-name{font-size:14px;font-weight:700;margin-bottom:4px}
-.loc-addr{font-size:12px;color:var(--muted);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.loc-score{font-family:'Fraunces',serif;font-size:32px;line-height:1}
-.loc-mini-bar{height:4px;border-radius:2px;overflow:hidden;display:flex;margin-top:10px}
-.soc-filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-.soc-btn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--line);font-size:12px;font-weight:600;cursor:pointer;background:var(--white);font-family:inherit;transition:all .15s}
-.soc-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
-.soc-sent{border:1.5px solid var(--line);border-radius:8px;padding:5px 10px;font-family:inherit;font-size:12px;outline:none}
-.limit-banner{background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#92400e}
+.loc-addr{font-size:11px;color:var(--muted);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loc-score-big{font-family:'Fraunces',serif;font-size:38px;line-height:1;margin-bottom:6px}
+.social-source-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.social-tab{padding:7px 16px;border-radius:20px;border:1.5px solid var(--line);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;background:var(--white);font-family:inherit}
+.social-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tag-grid{display:flex;flex-wrap:wrap;gap:8px}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1.5px solid transparent}
+.tag-green{background:var(--green-bg);color:var(--green)}
+.tag-red{background:var(--red-bg);color:var(--red)}
+.tag-amber{background:var(--amber-bg);color:var(--amber)}
+.tag-neutral{background:#f3f4f6;color:#6b7280}
+.tag-count{font-size:10px;opacity:.7}
+.chart-wrap{position:relative;height:220px}
 .empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}
-.btn{padding:8px 16px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
-.btn-primary{background:var(--navy);color:#fff}
-.btn-primary:hover{opacity:.85}
-.btn-sm{padding:5px 12px;font-size:12px}
-.refresh-bar{background:var(--white);border-bottom:1px solid var(--line);padding:10px 28px;display:flex;align-items:center;gap:12px;font-size:13px}
+.spinner{width:20px;height:20px;border:2px solid var(--line);border-top-color:var(--teal);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.limit-banner{background:var(--amber-bg);border:1px solid #fde68a;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--amber)}
 @media(max-width:768px){.stats{grid-template-columns:1fr 1fr}.grid-2,.grid-3{grid-template-columns:1fr}.content{padding:16px}}
 </style>
 </head>
 <body>
+
 <div id="loading-screen">
-  <div class="spinner"></div>
-  <div style="font-size:14px;color:#7a7060">Veriler yükleniyor...</div>
+  <div class="spinner" style="width:36px;height:36px;border-width:3px"></div>
+  <div style="font-size:14px;color:var(--muted)">Veriler yükleniyor...</div>
 </div>
 
 <div id="app">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div class="topbar-logo">marka <span>algı</span></div>
-      <div class="brand-pill" id="brand-pill">—</div>
-      <div class="demo-badge">DEMO</div>
+    <div class="topbar-left">
+      <div class="topbar-logo">Analitik</div>
+      <div class="brand-tag" id="brand-pill">—</div>
+      <div class="demo-tag">DEMO</div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px">
+    <div class="topbar-right">
       <span class="expire-note" id="expire-note"></span>
-      <button class="btn btn-primary btn-sm" onclick="reloadData()">↻ Yenile</button>
+      <button class="btn btn-outline btn-sm" onclick="reloadData()">↻ Yenile</button>
     </div>
   </div>
 
   <div class="nav-tabs">
-    <div class="tab active" onclick="goTab('overview')">Genel Bakış</div>
-    <div class="tab" onclick="goTab('locations')">📍 Şubeler</div>
-    <div class="tab" onclick="goTab('social')">🔍 Sosyal Medya</div>
+    <div class="tab active" data-tab="overview" onclick="goTab('overview')">Genel Bakış</div>
+    <div class="tab" data-tab="locations" onclick="goTab('locations')">📍 Şubeler</div>
+    <div class="tab" data-tab="social" onclick="goTab('social')">🔍 Sosyal Medya</div>
+    <div class="tab" data-tab="categories" onclick="goTab('categories')">Kategoriler</div>
   </div>
 
   <div class="content">
@@ -128,7 +135,7 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
     <!-- GENEL BAKIŞ -->
     <div class="page active" id="tab-overview">
       <div id="limit-banner" class="limit-banner" style="display:none">
-        ⚠️ Demo limiti doldu (50 yorum). Tüm özellikleri kullanmak için bizimle iletişime geçin.
+        ⚠️ Demo limiti doldu (50 yorum). Platformu kullanmaya devam etmek için bizimle iletişime geçin.
       </div>
       <div class="stats">
         <div class="stat stat-accent">
@@ -139,7 +146,7 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
         <div class="stat">
           <div class="stat-label">Toplam Yorum</div>
           <div class="stat-value" id="ov-total">—</div>
-          <div class="stat-sub" id="ov-src">—</div>
+          <div class="stat-sub" id="ov-src-count"></div>
         </div>
         <div class="stat stat-green">
           <div class="stat-label">Pozitif</div>
@@ -153,29 +160,33 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
         </div>
       </div>
 
-      <div class="grid-3">
+      <div class="grid-3 mb24">
         <div class="card">
           <div class="card-header"><span class="card-title">Duygu Dağılımı</span></div>
           <div class="card-body">
             <div style="display:flex;align-items:center;gap:20px">
-              <div class="ring-wrap">
-                <svg width="100" height="100" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" stroke-width="10"/>
-                  <circle id="ring-circle" cx="50" cy="50" r="40" fill="none" stroke="#15803d" stroke-width="10"
-                    stroke-dasharray="251" stroke-dashoffset="251" stroke-linecap="round" style="transition:stroke-dashoffset 1s ease"/>
+              <div class="score-ring-wrap">
+                <svg width="110" height="110" viewBox="0 0 110 110">
+                  <circle cx="55" cy="55" r="46" fill="none" stroke="#f3f4f6" stroke-width="11"/>
+                  <circle id="ring-circle" cx="55" cy="55" r="46" fill="none" stroke="#15803d" stroke-width="11"
+                    stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"
+                    style="transition:stroke-dashoffset 1s ease,stroke .4s"/>
                 </svg>
-                <div class="ring-num"><span id="ring-num">—</span><span>/ 100</span></div>
+                <div class="score-ring-num">
+                  <span id="ring-num">—</span>
+                  <span>/ 100</span>
+                </div>
               </div>
               <div style="flex:1">
-                <div class="sent-bar">
+                <div class="sent-bar" style="margin-bottom:10px">
                   <div class="sb-g" id="sb-g" style="width:0%"></div>
                   <div class="sb-a" id="sb-a" style="width:0%"></div>
                   <div class="sb-r" id="sb-r" style="width:0%"></div>
                 </div>
                 <div class="sent-legend">
-                  <div class="sl"><div class="sl-dot" style="background:#15803d"></div><span id="l-pos">—</span></div>
+                  <div class="sl"><div class="sl-dot" style="background:var(--green)"></div><span id="l-pos">—</span></div>
                   <div class="sl"><div class="sl-dot" style="background:#f59e0b"></div><span id="l-neu">—</span></div>
-                  <div class="sl"><div class="sl-dot" style="background:#b91c1c"></div><span id="l-neg">—</span></div>
+                  <div class="sl"><div class="sl-dot" style="background:var(--red)"></div><span id="l-neg">—</span></div>
                 </div>
               </div>
             </div>
@@ -187,50 +198,57 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header"><span class="card-title">Kategori Durumu</span></div>
+      <div class="card mb24">
+        <div class="card-header">
+          <span class="card-title">Sentiment Trendi</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select id="trend-period" onchange="renderTrend()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
+              <option value="12">Son 12 Ay</option>
+              <option value="6">Son 6 Ay</option>
+              <option value="0">Tümü</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card mb24">
+        <div class="card-header"><span class="card-title">Kategori Durumu</span><span style="font-size:11px;color:var(--muted)">Tıkla → Yorumlara filtrele</span></div>
         <div class="card-body"><div class="tag-grid" id="cat-tags"><div class="empty"><span class="spinner"></span></div></div></div>
       </div>
 
       <div class="grid-2">
         <div class="card">
           <div class="card-header"><span class="card-title" style="color:var(--red)">▼ En Olumsuz Yorumlar</span></div>
-          <div class="card-body" id="worst-list"><div class="empty"><span class="spinner"></span></div></div>
+          <div class="card-body review-list" id="worst-list"><div class="empty"><span class="spinner"></span></div></div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title" style="color:var(--green)">▲ En Olumlu Yorumlar</span></div>
-          <div class="card-body" id="best-list"><div class="empty"><span class="spinner"></span></div></div>
+          <div class="card-body review-list" id="best-list"><div class="empty"><span class="spinner"></span></div></div>
         </div>
       </div>
     </div>
 
     <!-- ŞUBELER -->
     <div class="page" id="tab-locations">
-      <div class="loc-grid" id="loc-grid"><div class="empty"><span class="spinner"></span></div></div>
+      <div class="loc-grid mb24" id="loc-grid"><div class="empty"><span class="spinner"></span></div></div>
       <div id="loc-detail" style="display:none">
         <div class="card">
-          <div class="card-header"><span class="card-title" id="loc-detail-name">Şube</span></div>
+          <div class="card-header">
+            <span class="card-title" id="loc-detail-name">Şube Detayı</span>
+            <select id="loc-period" onchange="reloadLocTrend()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
+              <option value="12">Son 12 Ay</option>
+              <option value="6">Son 6 Ay</option>
+              <option value="0">Tümü</option>
+            </select>
+          </div>
           <div class="card-body">
-            <div class="grid-2" style="margin-bottom:16px">
-              <div>
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Duygu Dağılımı</div>
-                <div class="sent-bar">
-                  <div class="sb-g" id="loc-sb-g" style="width:0%"></div>
-                  <div class="sb-a" id="loc-sb-a" style="width:0%"></div>
-                  <div class="sb-r" id="loc-sb-r" style="width:0%"></div>
-                </div>
-                <div class="sent-legend">
-                  <div class="sl"><div class="sl-dot" style="background:#15803d"></div><span id="loc-l-pos">—</span></div>
-                  <div class="sl"><div class="sl-dot" style="background:#f59e0b"></div><span id="loc-l-neu">—</span></div>
-                  <div class="sl"><div class="sl-dot" style="background:#b91c1c"></div><span id="loc-l-neg">—</span></div>
-                </div>
-              </div>
-              <div>
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Kategori</div>
-                <div class="tag-grid" id="loc-cats"></div>
-              </div>
-            </div>
-            <div id="loc-reviews"></div>
+            <div class="chart-wrap mb24" style="margin-bottom:20px"><canvas id="loc-trend-chart"></canvas></div>
+            <div class="tag-grid mb24" style="margin-bottom:16px" id="loc-cat-tags"></div>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">En Olumsuz Yorumlar</div>
+            <div class="review-list" id="loc-reviews"></div>
           </div>
         </div>
       </div>
@@ -243,7 +261,35 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
         <div class="stat stat-green"><div class="stat-label">Pozitif</div><div class="stat-value" id="soc-pos">—</div></div>
         <div class="stat stat-red"><div class="stat-label">Negatif</div><div class="stat-value" id="soc-neg">—</div></div>
       </div>
-      <div id="soc-list"><div class="empty">Sosyal medya verisi yükleniyor...</div></div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Sosyal Medya Yorumları</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <div class="social-source-tabs">
+              <button class="social-tab active" onclick="setSocSource('all',this)">Tümü</button>
+              <button class="social-tab" onclick="setSocSource('twitter_x',this)">Twitter/X</button>
+              <button class="social-tab" onclick="setSocSource('eksisozluk',this)">Ekşi</button>
+            </div>
+            <select id="soc-sent-filter" onchange="renderSocial()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
+              <option value="">Tüm Duygu</option>
+              <option value="positive">Pozitif</option>
+              <option value="neutral">Nötr</option>
+              <option value="negative">Negatif</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body review-list" id="social-reviews-list"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- KATEGORİLER -->
+    <div class="page" id="tab-categories">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Kategori Bazlı Analiz</span></div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:320px"><canvas id="cat-chart"></canvas></div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -251,79 +297,98 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 
 <script>
 const API = 'https://web-production-f48f6.up.railway.app';
-let uid, DATA = null;
+let uid, DATA = null, trendChart = null, locTrendChart = null, catChart = null;
+let currentOpenLocId = null, socSource = 'all', _activeCatFilter = null;
 
-function sc(s){ return s>=60?'var(--green)':s>=40?'#f59e0b':'var(--red)'; }
-function fd(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('tr-TR',{day:'2-digit',month:'short',year:'numeric'}); }
+function sc(s){ return s>=70?'var(--green)':s>=45?'#f59e0b':'var(--red)'; }
+function fd(d){ if(!d) return '—'; try{ return new Date(d).toLocaleDateString('tr-TR',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return d; } }
 function tr(s,n=200){ return s&&s.length>n?s.slice(0,n)+'…':(s||'—'); }
 
-function platBadge(cid){
-  if(!DATA) return '';
-  const c=DATA.connectors.find(x=>x.connector_id===cid);
-  const key=c?.key||'';
+function connName(cid){ return DATA?.connectors.find(c=>c.connector_id===cid)?.name||'—'; }
+function connKey(cid){  return DATA?.connectors.find(c=>c.connector_id===cid)?.key||''; }
+function locName(lid){  return DATA?.locations.find(l=>l.location_id===lid)?.name||'—'; }
+
+function platformBadge(cid){
+  const key=connKey(cid);
   if(key==='google_maps') return '<span class="rv-platform gmaps">Google Maps</span>';
   if(key==='twitter_x')   return '<span class="rv-platform twitter">Twitter/X</span>';
   if(key==='eksisozluk')  return '<span class="rv-platform eksi">Ekşi</span>';
-  return `<span class="rv-platform">${c?.name||'—'}</span>`;
-}
-
-function locName(lid){
-  if(!DATA) return '—';
-  return DATA.locations.find(l=>l.location_id===lid)?.name||'—';
-}
-
-function connName(cid){
-  if(!DATA) return '—';
-  return DATA.connectors.find(c=>c.connector_id===cid)?.name||cid;
+  return `<span class="rv-platform">${connName(cid)}</span>`;
 }
 
 function rvHtml(r){
-  return `<div class="rv">
-    <div class="rv-meta">
-      <span class="rv-score" style="color:${sc(r.sentiment_score||50)}">${r.sentiment_score||'—'}</span>
-      ${platBadge(r.connector_id)}
-      <span class="rv-loc">${locName(r.location_id)}</span>
-      <span class="rv-date">${fd(r.review_date)}</span>
-      ${r.source_url?`<a href="${r.source_url}" target="_blank" style="font-size:11px;color:var(--navy)">→</a>`:''}
+  const s=r.overall_sentiment||'neutral';
+  const cls=s==='positive'?'pos':s==='negative'?'neg':'neu';
+  return `<div class="review-card ${s}">
+    <div class="rv-score ${cls}">${r.sentiment_score||'—'}</div>
+    <div class="rv-body">
+      <div class="rv-text">"${tr(r.review_text)}"</div>
+      <div class="rv-meta">
+        ${platformBadge(r.connector_id)}
+        <span>${locName(r.location_id)}</span>
+        <span>${fd(r.review_date)}</span>
+        ${r.source_url?`<a class="rv-link" href="${r.source_url}" target="_blank">Kaynağa git ↗</a>`:''}
+      </div>
     </div>
-    <div class="rv-text">${tr(r.review_text)}</div>
   </div>`;
 }
 
 async function loadData(){
   const resp = await fetch(`${API}/demo/dashboard-data?uid=${uid}`);
-  if(!resp.ok) throw new Error('API hatası');
+  if(!resp.ok) throw new Error('API hatası: ' + resp.status);
   return await resp.json();
 }
 
-function renderOverview(){
-  const ov = DATA.overview;
-  const total=ov.total, pos=ov.pos, neg=ov.neg, neu=ov.neu, avg=ov.avg_score;
+async function reloadData(){
+  try{ DATA=await loadData(); render(); }
+  catch(e){ alert('Veri yüklenemedi: '+e.message); }
+}
 
+function goTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(!DATA) return;
+  if(tab==='locations')  renderLocations();
+  if(tab==='social')     renderSocial();
+  if(tab==='categories') renderCategories();
+}
+
+function render(){
+  document.getElementById('brand-pill').textContent = DATA.brand_name||'—';
+  if(DATA.expires_at) document.getElementById('expire-note').textContent =
+    `Demo ${new Date(DATA.expires_at).toLocaleDateString('tr-TR')} tarihine kadar aktif`;
+  if(DATA.limit_reached) document.getElementById('limit-banner').style.display='block';
+  renderOverview();
+  renderTrend();
+}
+
+function renderOverview(){
+  const {total,pos,neg,neu,avg_score:avg,platform_counts} = DATA.overview;
   document.getElementById('ov-score').textContent=avg;
   document.getElementById('ov-score').style.color=sc(avg);
   document.getElementById('ov-total').textContent=total;
+  document.getElementById('ov-src-count').textContent=`${Object.keys(platform_counts||{}).length} kaynak`;
   document.getElementById('ov-pos').textContent=pos;
   document.getElementById('ov-neg').textContent=neg;
-  document.getElementById('ov-src').textContent=`${Object.keys(ov.platform_counts||{}).length} kaynak`;
   if(total){
-    const pp=Math.round(pos/total*100), np=Math.round(neu/total*100);
+    const pp=Math.round(pos/total*100),np=Math.round(neg/total*100),nup=100-pp-np;
     document.getElementById('ov-pos-pct').textContent=`%${pp} oran`;
-    document.getElementById('ov-neg-pct').textContent=`%${Math.round(neg/total*100)} oran`;
+    document.getElementById('ov-neg-pct').textContent=`%${np} oran`;
     document.getElementById('sb-g').style.width=pp+'%';
-    document.getElementById('sb-a').style.width=np+'%';
-    document.getElementById('sb-r').style.width=(100-pp-np)+'%';
+    document.getElementById('sb-a').style.width=nup+'%';
+    document.getElementById('sb-r').style.width=np+'%';
     document.getElementById('l-pos').textContent=`${pp}% Pozitif`;
-    document.getElementById('l-neu').textContent=`${np}% Nötr`;
-    document.getElementById('l-neg').textContent=`${100-pp-np}% Negatif`;
+    document.getElementById('l-neu').textContent=`${nup}% Nötr`;
+    document.getElementById('l-neg').textContent=`${np}% Negatif`;
   }
-  const circ=251;
+  const circ=289;
   document.getElementById('ring-num').textContent=avg;
   document.getElementById('ring-circle').style.strokeDashoffset=circ-(circ*avg/100);
   document.getElementById('ring-circle').style.stroke=sc(avg);
 
   // Platform dağılımı
-  const pc=ov.platform_counts||{};
+  const pc=platform_counts||{};
   const pTotal=Object.values(pc).reduce((s,v)=>s+v,0)||1;
   document.getElementById('platform-body').innerHTML=
     Object.entries(pc).sort((a,b)=>b[1]-a[1]).map(([cid,cnt])=>`
@@ -337,118 +402,217 @@ function renderOverview(){
         </div>
       </div>`).join('')||'<div class="empty">Veri yok</div>';
 
-  // Kategoriler
-  const cats=DATA.categories||{};
-  document.getElementById('cat-tags').innerHTML=
-    Object.entries(cats).sort((a,b)=>b[1].total-a[1].total).map(([name,v])=>{
-      const pct=Math.round(v.pos/v.total*100);
-      const cls=pct>=60?'cat-pos':pct>=40?'cat-neu':'cat-neg';
-      return `<div class="cat-tag ${cls}">${name} <span style="opacity:.7">${pct}%</span></div>`;
-    }).join('')||'<div class="empty">Kategori yok</div>';
+  renderCatTags(DATA.categories,'cat-tags');
+  document.getElementById('worst-list').innerHTML=DATA.worst_reviews.length?DATA.worst_reviews.map(rvHtml).join(''):'<div class="empty">Veri yok</div>';
+  document.getElementById('best-list').innerHTML=DATA.best_reviews.length?DATA.best_reviews.map(rvHtml).join(''):'<div class="empty">Veri yok</div>';
+}
 
-  // Yorumlar
-  document.getElementById('worst-list').innerHTML=
-    DATA.worst_reviews.length ? DATA.worst_reviews.map(rvHtml).join('') : '<div class="empty">Veri yok</div>';
-  document.getElementById('best-list').innerHTML=
-    DATA.best_reviews.length ? DATA.best_reviews.map(rvHtml).join('') : '<div class="empty">Veri yok</div>';
+function renderCatTags(cats, containerId){
+  const el=document.getElementById(containerId);
+  if(!cats||!Object.keys(cats).length){ el.innerHTML='<div class="empty">Kategori verisi yok</div>'; return; }
+  el.innerHTML=Object.entries(cats).sort((a,b)=>b[1].total-a[1].total).map(([name,c])=>{
+    const pr=c.total?c.pos/c.total:0,nr=c.total?c.neg/c.total:0;
+    let cls='tag-neutral',icon='●';
+    if(pr>0.6){cls='tag-green';icon='▲';}
+    else if(nr>0.4){cls='tag-red';icon='▼';}
+    else if(nr>0.2){cls='tag-amber';icon='◆';}
+    return `<span class="tag ${cls}" onclick="handleCatTag('${encodeURIComponent(name)}')"
+      data-catname="${encodeURIComponent(name)}">${icon} ${name} <span class="tag-count">${c.total}</span></span>`;
+  }).join('');
+}
+
+function handleCatTag(encodedName){
+  const catName=decodeURIComponent(encodedName);
+  if(_activeCatFilter===catName){
+    _activeCatFilter=null;
+    document.getElementById('cat-filtered-reviews')?.remove();
+    document.querySelectorAll('.tag').forEach(t=>t.style.opacity='1');
+    return;
+  }
+  _activeCatFilter=catName;
+  document.querySelectorAll('.tag').forEach(t=>{
+    t.style.opacity=decodeURIComponent(t.dataset.catname||'')==catName?'1':'0.4';
+  });
+  const revs=(DATA.all_reviews||[]).filter(r=>r.overall_sentiment).slice(0,8);
+  document.getElementById('cat-filtered-reviews')?.remove();
+  if(!revs.length) return;
+  const panel=document.createElement('div');
+  panel.id='cat-filtered-reviews';
+  panel.style.cssText='margin-top:16px;padding-top:16px;border-top:2px solid var(--line)';
+  panel.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700">📂 <strong>${catName}</strong> kategorisi</div>
+      <button onclick="this.closest('#cat-filtered-reviews').remove();_activeCatFilter=null;document.querySelectorAll('.tag').forEach(t=>t.style.opacity='1')"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;line-height:1">×</button>
+    </div>
+    <div class="review-list">${revs.map(rvHtml).join('')}</div>`;
+  document.querySelector('#cat-tags')?.closest('.card')?.after(panel);
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderTrend(){
+  if(!DATA?.trend) return;
+  const period=parseInt(document.getElementById('trend-period')?.value||'12');
+  let {labels,scores,counts}=DATA.trend;
+  if(period>0){
+    const cutoff=new Date();
+    cutoff.setMonth(cutoff.getMonth()-period);
+    const cutStr=`${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}`;
+    const idx=labels.findIndex(l=>l>=cutStr);
+    if(idx>0){ labels=labels.slice(idx); scores=scores.slice(idx); counts=counts.slice(idx); }
+  }
+  const ctx=document.getElementById('trend-chart')?.getContext('2d');
+  if(!ctx) return;
+  if(trendChart) trendChart.destroy();
+  trendChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:labels.map(l=>{const[y,m]=l.split('-');return new Date(y,m-1).toLocaleDateString('tr-TR',{month:'short',year:'2-digit'});}),
+      datasets:[{
+        label:'Ortalama Skor',data:scores,
+        borderColor:'#1e3a5f',backgroundColor:'rgba(30,58,95,.08)',
+        fill:true,tension:0.4,spanGaps:true,
+        pointRadius:counts.map(c=>c>=5?5:3),
+        pointBackgroundColor:counts.map(c=>c>=5?'#1e3a5f':'#cbd5e1'),
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Skor: ${ctx.raw} (${counts[ctx.dataIndex]} yorum)`}}},
+      scales:{y:{min:0,max:100,ticks:{stepSize:25},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}
+    }
+  });
 }
 
 function renderLocations(){
   const el=document.getElementById('loc-grid');
-  if(!DATA.locations.length){ el.innerHTML='<div class="empty">Lokasyon yok</div>'; return; }
-  el.innerHTML=DATA.locations.map((loc,i)=>`
-    <div class="loc-card" onclick="showLoc(${i})" id="lc-${i}">
+  const locs=DATA.locations.filter(l=>!l.is_general);
+  if(!locs.length){ el.innerHTML='<div class="empty">Şube bulunamadı</div>'; return; }
+  el.innerHTML=locs.map(loc=>`
+    <div class="loc-card" id="lc-${loc.location_id}" onclick="openLoc('${loc.location_id}','${(loc.name||'').replace(/'/g,"\\'")}')">
       <div class="loc-name">📍 ${loc.name}</div>
-      <div class="loc-addr">${loc.address||''}</div>
-      <div class="loc-score" style="color:${sc(loc.avg_score)}">${loc.avg_score}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">${loc.total} yorum analiz edildi</div>
-      <div class="loc-mini-bar">
+      <div class="loc-addr">${loc.address||'—'}</div>
+      <div class="loc-score-big" style="color:${sc(loc.avg_score)}">${loc.avg_score||'—'}</div>
+      <div class="sent-bar" style="margin-bottom:6px">
         <div class="sb-g" style="width:${loc.total?Math.round(loc.pos/loc.total*100):0}%"></div>
+        <div class="sb-a" style="width:${loc.total?Math.round((loc.neu||0)/loc.total*100):0}%"></div>
         <div class="sb-r" style="width:${loc.total?Math.round(loc.neg/loc.total*100):0}%"></div>
       </div>
+      <div style="font-size:11px;color:var(--muted)">${loc.total} analiz</div>
     </div>`).join('');
 }
 
-function showLoc(i){
-  const loc=DATA.locations[i];
-  document.querySelectorAll('.loc-card').forEach((c,j)=>c.classList.toggle('selected',j===i));
+function openLoc(locId, name){
+  currentOpenLocId=locId;
+  document.querySelectorAll('.loc-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('lc-'+locId)?.classList.add('selected');
   document.getElementById('loc-detail').style.display='block';
-  document.getElementById('loc-detail-name').textContent=`📍 ${loc.name}`;
+  document.getElementById('loc-detail-name').textContent=name;
+  const locRevs=(DATA.all_reviews||[]).filter(r=>r.location_id===locId);
+  const negRevs=[...locRevs].sort((a,b)=>(a.sentiment_score||50)-(b.sentiment_score||50)).slice(0,5);
+  document.getElementById('loc-reviews').innerHTML=negRevs.length?negRevs.map(rvHtml).join(''):'<div class="empty">Yorum yok</div>';
+  renderCatTags(DATA.categories,'loc-cat-tags');
+  drawLocTrend(locId,locRevs);
+  document.getElementById('loc-detail').scrollIntoView({behavior:'smooth'});
+}
 
-  const t=loc.total||0, pp=t?Math.round(loc.pos/t*100):0, np=t?Math.round(loc.neu/t*100):0;
-  document.getElementById('loc-sb-g').style.width=pp+'%';
-  document.getElementById('loc-sb-a').style.width=np+'%';
-  document.getElementById('loc-sb-r').style.width=(100-pp-np)+'%';
-  document.getElementById('loc-l-pos').textContent=`${pp}% Pozitif`;
-  document.getElementById('loc-l-neu').textContent=`${np}% Nötr`;
-  document.getElementById('loc-l-neg').textContent=`${100-pp-np}% Negatif`;
-  document.getElementById('loc-cats').innerHTML='';
+function reloadLocTrend(){
+  if(!currentOpenLocId) return;
+  drawLocTrend(currentOpenLocId,(DATA.all_reviews||[]).filter(r=>r.location_id===currentOpenLocId));
+}
 
-  // Bu lokasyona ait kategori verisi yok direkt — worst/best'ten filtrele
-  const locRevs=[...DATA.worst_reviews,...DATA.best_reviews]
-    .filter(r=>r.location_id===loc.location_id).slice(0,6);
-  document.getElementById('loc-reviews').innerHTML=locRevs.length
-    ? locRevs.map(rvHtml).join('')
-    : '<div class="empty">Bu şube için yorum gösterilemiyor</div>';
+function drawLocTrend(locId, reviews){
+  const ctx=document.getElementById('loc-trend-chart')?.getContext('2d');
+  if(!ctx) return;
+  const period=parseInt(document.getElementById('loc-period')?.value||'12');
+  const cutoff=period>0?new Date(Date.now()-period*30*24*3600*1000).toISOString().slice(0,7):'2000-01';
+  const months={};
+  reviews.forEach(r=>{
+    if(!r.review_date||!r.sentiment_score) return;
+    const mo=r.review_date.slice(0,7);
+    if(mo<cutoff) return;
+    if(!months[mo]) months[mo]={scores:[],count:0};
+    months[mo].scores.push(r.sentiment_score);
+    months[mo].count++;
+  });
+  const labels=Object.keys(months).sort();
+  const scores=labels.map(m=>Math.round(months[m].scores.reduce((s,v)=>s+v,0)/months[m].scores.length));
+  if(locTrendChart) locTrendChart.destroy();
+  locTrendChart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:labels.map(l=>{const[y,m]=l.split('-');return new Date(y,m-1).toLocaleDateString('tr-TR',{month:'short',year:'2-digit'});}),
+      datasets:[{
+        label:'Ort. Skor',data:scores,borderRadius:4,
+        backgroundColor:scores.map(s=>s>=70?'rgba(21,128,61,.75)':s>=45?'rgba(245,158,11,.7)':'rgba(185,28,28,.75)'),
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:0,max:100,grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}
+  });
+}
+
+function setSocSource(src,btn){
+  socSource=src;
+  document.querySelectorAll('.social-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSocial();
 }
 
 function renderSocial(){
   document.getElementById('soc-total').textContent=DATA.social_total||0;
   document.getElementById('soc-pos').textContent=DATA.social_pos||0;
   document.getElementById('soc-neg').textContent=DATA.social_neg||0;
-  document.getElementById('soc-list').innerHTML=
-    DATA.social_reviews.length
-      ? DATA.social_reviews.map(rvHtml).join('')
-      : '<div class="empty">Sosyal medya verisi yok. Ekşi veya Twitter çekimi yapın.</div>';
+  const sentFilter=document.getElementById('soc-sent-filter')?.value||'';
+  let revs=DATA.social_reviews||[];
+  if(socSource!=='all'){
+    const cid=DATA.connectors.find(c=>c.key===socSource)?.connector_id;
+    if(cid) revs=revs.filter(r=>r.connector_id===cid);
+  }
+  if(sentFilter) revs=revs.filter(r=>r.overall_sentiment===sentFilter);
+  document.getElementById('social-reviews-list').innerHTML=
+    revs.length?revs.map(rvHtml).join(''):'<div class="empty">Sosyal medya yorumu bulunamadı</div>';
 }
 
-let activeTab='overview';
-function goTab(tab){
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('active',['overview','locations','social'][i]===tab);
+function renderCategories(){
+  const ctx=document.getElementById('cat-chart')?.getContext('2d');
+  if(!ctx||!DATA?.categories) return;
+  if(catChart) catChart.destroy();
+  const cats=Object.entries(DATA.categories).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
+  catChart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:cats.map(([n])=>n),
+      datasets:[
+        {label:'Pozitif %',data:cats.map(([,v])=>Math.round(v.pos/v.total*100)),backgroundColor:'rgba(21,128,61,.75)',borderRadius:4},
+        {label:'Nötr %',data:cats.map(([,v])=>Math.round((v.total-v.pos-v.neg)/v.total*100)),backgroundColor:'rgba(245,158,11,.6)',borderRadius:4},
+        {label:'Negatif %',data:cats.map(([,v])=>Math.round(v.neg/v.total*100)),backgroundColor:'rgba(185,28,28,.75)',borderRadius:4},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{
+        x:{stacked:true,grid:{display:false}},
+        y:{stacked:true,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f3f4f6'}}
+      }
+    }
   });
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById(`tab-${tab}`).classList.add('active');
-  activeTab=tab;
-  if(!DATA) return;
-  if(tab==='locations') renderLocations();
-  if(tab==='social') renderSocial();
-}
-
-async function reloadData(){
-  try{
-    DATA = await loadData();
-    render();
-  } catch(e){
-    alert('Veri yüklenemedi: '+e.message);
-  }
-}
-
-function render(){
-  document.getElementById('brand-pill').textContent=DATA.brand_name||'—';
-  if(DATA.expires_at){
-    document.getElementById('expire-note').textContent=
-      `Demo ${new Date(DATA.expires_at).toLocaleDateString('tr-TR')} tarihine kadar aktif`;
-  }
-  if(DATA.limit_reached) document.getElementById('limit-banner').style.display='block';
-  renderOverview();
-  if(activeTab==='locations') renderLocations();
-  if(activeTab==='social') renderSocial();
 }
 
 window.addEventListener('DOMContentLoaded', async()=>{
   const params=new URLSearchParams(window.location.search);
-  uid=params.get('uid');
+  uid=params.get('uid')||localStorage.getItem('demo_uid');
   if(!uid){ window.location.href='./index.html'; return; }
-
+  localStorage.setItem('demo_uid',uid);
   try{
-    DATA = await loadData();
+    DATA=await loadData();
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('app').classList.add('show');
     render();
-  } catch(e){
+  }catch(e){
     document.getElementById('loading-screen').innerHTML=
-      `<div style="color:#b91c1c;font-size:14px">Veri yüklenemedi. <a href="./index.html">Ana sayfaya dön</a></div>`;
+      `<div style="color:var(--red);font-size:14px;text-align:center">Veri yüklenemedi.<br><a href="./index.html" style="color:var(--navy)">Ana sayfaya dön</a></div>`;
   }
 });
 </script>
