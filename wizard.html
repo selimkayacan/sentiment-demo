@@ -879,6 +879,7 @@ function startWaitingAnimation() {
       clearInterval(interval);
       // Dashboard'a yönlendir
       setTimeout(() => {
+        localStorage.setItem('demo_uid', USER_ID);
         window.location.href = `./dashboard.html?uid=${USER_ID}`;
       }, 2000);
     }
