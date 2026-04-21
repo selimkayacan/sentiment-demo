@@ -642,7 +642,7 @@ async function searchLoc() {
 
   try {
     const resp = await fetch(
-      `${API_BASE}/demo/search-location?q=${encodeURIComponent(q)}`,
+      `${API_BASE}/demo/search-location?q=${encodeURIComponent(q)}&uid=${USER_ID}`,
       { signal: AbortSignal.timeout(12000) }
     );
     const data = await resp.json();
