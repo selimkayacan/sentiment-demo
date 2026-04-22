@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Marka Analitik — Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -315,6 +316,9 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 
 <script>
 const API = 'https://web-production-f48f6.up.railway.app';
+const SUPABASE_URL      = 'https://escjdzsfxzwvshapzugb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2pkenNmeHp3dnNoYXB6dWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzMzgsImV4cCI6MjA4OTg4MDMzOH0.ylywekAEhONMpx5RBCdZXafUna9jZcB19etFrEcRJe8';
+const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let uid, DATA = null, trendChart = null, locTrendChart = null, catChart = null;
 let currentOpenLocId = null, socSource = 'all', _activeCatFilter = null;
 
@@ -710,7 +714,17 @@ function checkPolling(){
 window.addEventListener('DOMContentLoaded', async()=>{
   const params=new URLSearchParams(window.location.search);
   uid=params.get('uid')||localStorage.getItem('demo_uid');
-  if(!uid){ window.location.href='./index.html'; return; }
+
+  // uid yoksa Supabase session'dan al
+  if(!uid){
+    const { data: { session } } = await sbClient.auth.getSession();
+    if(!session){ window.location.href='./login.html'; return; }
+    try{
+      const resp = await fetch(`${API}/demo/status-by-email?email=${encodeURIComponent(session.user.email)}`);
+      if(resp.ok){ const s=await resp.json(); if(s.user_id) uid=s.user_id; }
+    }catch(e){}
+    if(!uid){ window.location.href='./login.html'; return; }
+  }
   localStorage.setItem('demo_uid',uid);
   try{
     DATA=await loadData();
