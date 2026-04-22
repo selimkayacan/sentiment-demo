@@ -444,10 +444,28 @@ async function handleRegister() {
   if (!email || !email.includes('@')) { showError('Geçerli bir e-posta giriniz'); return; }
 
   btn.disabled = true;
-  document.getElementById('btn-text').textContent = 'Gönderiliyor...';
+  document.getElementById('btn-text').textContent = 'Kontrol ediliyor...';
   document.getElementById('btn-arrow').textContent = '⏳';
 
   try {
+    // Önce mevcut kayıt var mı kontrol et
+    const statusResp = await fetch(`${API_BASE}/demo/status-by-email?email=${encodeURIComponent(email)}`);
+    if (statusResp.ok) {
+      const s = await statusResp.json();
+      if (s.user_id && !s.is_blocked) {
+        // Zaten kayıtlı ve onaylı — uid'yi kaydet, yönlendir
+        localStorage.setItem('demo_uid', s.user_id);
+        if (s.brand_id && s.analyzed_count > 0) {
+          window.location.href = `./dashboard.html?uid=${s.user_id}`;
+        } else {
+          window.location.href = `./wizard.html?uid=${s.user_id}`;
+        }
+        return;
+      }
+    }
+
+    // Yeni kayıt
+    document.getElementById('btn-text').textContent = 'Gönderiliyor...';
     const resp = await fetch(`${API_BASE}/demo/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -463,7 +481,7 @@ async function handleRegister() {
       return;
     }
 
-    // Başarı
+    // Başarı — konfirmasyon maili gönderildi
     document.getElementById('form-content').style.display = 'none';
     document.getElementById('confirm-email').textContent = email;
     document.getElementById('success-msg').style.display = 'block';
