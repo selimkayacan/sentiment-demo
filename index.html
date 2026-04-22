@@ -453,13 +453,9 @@ async function handleRegister() {
     if (statusResp.ok) {
       const s = await statusResp.json();
       if (s.user_id && !s.is_blocked) {
-        // Zaten kayıtlı ve onaylı — uid'yi kaydet, yönlendir
+        // Zaten kayıtlı ve onaylı — login sayfasına yönlendir
         localStorage.setItem('demo_uid', s.user_id);
-        if (s.brand_id && s.analyzed_count > 0) {
-          window.location.href = `./dashboard.html?uid=${s.user_id}`;
-        } else {
-          window.location.href = `./wizard.html?uid=${s.user_id}`;
-        }
+        window.location.href = './login.html';
         return;
       }
     }
@@ -478,6 +474,11 @@ async function handleRegister() {
       btn.disabled = false;
       document.getElementById('btn-text').textContent = 'Demo Başvurusu Yap';
       document.getElementById('btn-arrow').textContent = '→';
+      return;
+    }
+    // Zaten kayıtlı ama onaysız — login'e yönlendir
+    if (data.status === 'exists') {
+      window.location.href = './login.html';
       return;
     }
 
