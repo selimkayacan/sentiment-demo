@@ -134,8 +134,12 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 
     <!-- GENEL BAKIŞ -->
     <div class="page active" id="tab-overview">
+      <div id="analyzing-banner" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#1d4ed8;align-items:center;gap:10px">
+        <span style="animation:spin .8s linear infinite;display:inline-block">⏳</span>
+        <span>Analiz devam ediyor — yeni yorumlar otomatik yüklenecek.</span>
+      </div>
       <div id="limit-banner" class="limit-banner" style="display:none">
-        ⚠️ Demo limiti doldu (50 yorum). Platformu kullanmaya devam etmek için bizimle iletişime geçin.
+        ⚠️ Demo analiz kotası doldu. Tüm veriler görüntüleniyor — daha fazla analiz için <a href="mailto:info@markaiq.com" style="color:var(--amber);font-weight:700">info@markaiq.com</a> ile iletişime geçin.
       </div>
       <div class="stats">
         <div class="stat stat-accent">
@@ -261,6 +265,20 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
         <div class="stat stat-green"><div class="stat-label">Pozitif</div><div class="stat-value" id="soc-pos">—</div></div>
         <div class="stat stat-red"><div class="stat-label">Negatif</div><div class="stat-value" id="soc-neg">—</div></div>
       </div>
+      <div class="card mb24">
+        <div class="card-header">
+          <span class="card-title">Sosyal Medya Trendi</span>
+          <select id="soc-trend-period" onchange="renderSocialTrend()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
+            <option value="12">Son 12 Ay</option>
+            <option value="6">Son 6 Ay</option>
+            <option value="0">Tümü</option>
+          </select>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="social-trend-chart"></canvas></div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <span class="card-title">Sosyal Medya Yorumları</span>
@@ -339,10 +357,7 @@ async function loadData(){
   return await resp.json();
 }
 
-async function reloadData(){
-  try{ DATA=await loadData(); render(); }
-  catch(e){ alert('Veri yüklenemedi: '+e.message); }
-}
+// reloadData aşağıda DOMContentLoaded ile birlikte tanımlandı
 
 function goTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
@@ -350,7 +365,7 @@ function goTab(tab){
   document.getElementById('tab-'+tab).classList.add('active');
   if(!DATA) return;
   if(tab==='locations')  renderLocations();
-  if(tab==='social')     renderSocial();
+  if(tab==='social')     { renderSocial(); renderSocialTrend(); }
   if(tab==='categories') renderCategories();
 }
 
@@ -552,24 +567,86 @@ function drawLocTrend(locId, reviews){
   });
 }
 
+let socialTrendChart = null;
+
+function renderSocialTrend(){
+  if(!DATA?.social_reviews) return;
+  const ctx = document.getElementById('social-trend-chart')?.getContext('2d');
+  if(!ctx) return;
+  const period = parseInt(document.getElementById('soc-trend-period')?.value||'12');
+  const cutoff = period>0 ? new Date(Date.now()-period*30*24*3600*1000).toISOString().slice(0,7) : '2000-01';
+
+  let revs = DATA.social_reviews||[];
+  if(socSource!=='all'){
+    const cid=DATA.connectors.find(c=>c.key===socSource)?.connector_id;
+    if(cid) revs=revs.filter(r=>r.connector_id===cid);
+  }
+
+  const months={};
+  revs.forEach(r=>{
+    if(!r.review_date||!r.sentiment_score) return;
+    const mo=r.review_date.slice(0,7);
+    if(mo<cutoff) return;
+    if(!months[mo]) months[mo]={scores:[],count:0};
+    months[mo].scores.push(r.sentiment_score);
+    months[mo].count++;
+  });
+  const labels=Object.keys(months).sort();
+  const scores=labels.map(m=>Math.round(months[m].scores.reduce((s,v)=>s+v,0)/months[m].scores.length));
+  const counts=labels.map(m=>months[m].count);
+
+  if(socialTrendChart) socialTrendChart.destroy();
+  if(!labels.length){
+    document.getElementById('social-trend-chart').closest('.chart-wrap').innerHTML='<div class="empty">Trend verisi yok</div>';
+    return;
+  }
+  socialTrendChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:labels.map(l=>{const[y,m]=l.split('-');return new Date(y,m-1).toLocaleDateString('tr-TR',{month:'short',year:'2-digit'});}),
+      datasets:[{
+        label:'Ort. Skor',data:scores,
+        borderColor:'#0f766e',backgroundColor:'rgba(15,118,110,.08)',
+        fill:true,tension:0.4,spanGaps:true,
+        pointRadius:counts.map(c=>c>=3?5:3),
+        pointBackgroundColor:counts.map(c=>c>=3?'#0f766e':'#cbd5e1'),
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Skor: ${ctx.raw} (${counts[ctx.dataIndex]} yorum)`}}},
+      scales:{y:{min:0,max:100,ticks:{stepSize:25},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}
+    }
+  });
+}
+
 function setSocSource(src,btn){
   socSource=src;
   document.querySelectorAll('.social-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderSocial();
+  renderSocialTrend();
 }
 
 function renderSocial(){
-  document.getElementById('soc-total').textContent=DATA.social_total||0;
-  document.getElementById('soc-pos').textContent=DATA.social_pos||0;
-  document.getElementById('soc-neg').textContent=DATA.social_neg||0;
   const sentFilter=document.getElementById('soc-sent-filter')?.value||'';
   let revs=DATA.social_reviews||[];
+
+  // Kaynak filtresi uygula
   if(socSource!=='all'){
     const cid=DATA.connectors.find(c=>c.key===socSource)?.connector_id;
     if(cid) revs=revs.filter(r=>r.connector_id===cid);
   }
+  // Sentiment filtresi uygula
   if(sentFilter) revs=revs.filter(r=>r.overall_sentiment===sentFilter);
+
+  // Stats filtreye göre güncelle (#6)
+  const pos=revs.filter(r=>r.overall_sentiment==='positive').length;
+  const neg=revs.filter(r=>r.overall_sentiment==='negative').length;
+  document.getElementById('soc-total').textContent=revs.length;
+  document.getElementById('soc-pos').textContent=pos;
+  document.getElementById('soc-neg').textContent=neg;
+
   document.getElementById('social-reviews-list').innerHTML=
     revs.length?revs.map(rvHtml).join(''):'<div class="empty">Sosyal medya yorumu bulunamadı</div>';
 }
@@ -600,6 +677,36 @@ function renderCategories(){
   });
 }
 
+let _pollTimer = null;
+
+async function reloadData(){
+  try{
+    DATA=await loadData();
+    render();
+    checkPolling();
+  }catch(e){ console.error('Yenile hatası:',e); }
+}
+
+function checkPolling(){
+  // Analiz devam ediyorsa (total > 0 ama hâlâ az veri) 15sn'de bir yenile
+  const total = DATA?.overview?.total || 0;
+  const isAnalyzing = total < 10 && !DATA?.limit_reached;
+  const banner = document.getElementById('analyzing-banner');
+  if(banner) banner.style.display = isAnalyzing ? 'flex' : 'none';
+
+  if(isAnalyzing){
+    if(!_pollTimer) _pollTimer = setInterval(async()=>{
+      try{
+        DATA=await loadData();
+        render();
+        checkPolling();
+      }catch(e){}
+    }, 15000);
+  } else {
+    if(_pollTimer){ clearInterval(_pollTimer); _pollTimer=null; }
+  }
+}
+
 window.addEventListener('DOMContentLoaded', async()=>{
   const params=new URLSearchParams(window.location.search);
   uid=params.get('uid')||localStorage.getItem('demo_uid');
@@ -610,9 +717,21 @@ window.addEventListener('DOMContentLoaded', async()=>{
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('app').classList.add('show');
     render();
+    checkPolling();
   }catch(e){
-    document.getElementById('loading-screen').innerHTML=
-      `<div style="color:var(--red);font-size:14px;text-align:center">Veri yüklenemedi.<br><a href="./index.html" style="color:var(--navy)">Ana sayfaya dön</a></div>`;
+    // Veri henüz hazır değilse 10sn sonra tekrar dene (#1)
+    setTimeout(async()=>{
+      try{
+        DATA=await loadData();
+        document.getElementById('loading-screen').style.display='none';
+        document.getElementById('app').classList.add('show');
+        render();
+        checkPolling();
+      }catch(e2){
+        document.getElementById('loading-screen').innerHTML=
+          `<div style="color:var(--red);font-size:14px;text-align:center">Veri yüklenemedi.<br><a href="./index.html" style="color:var(--navy)">Ana sayfaya dön</a></div>`;
+      }
+    }, 10000);
   }
 });
 </script>
