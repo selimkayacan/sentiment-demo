@@ -535,7 +535,7 @@ let state = {
   brandName: '',
   locations: [],
   searchTerms: [],
-  excludeTerms: [],
+  excludeTerms: ['çekiliş', 'kupon', 'coin', 'kripto', 'nft', 'airdrop', 'kazan'],
   sources: [],
   email: '',
 };
@@ -702,6 +702,13 @@ function renderSelectedLocs() {
   const limitNote = document.getElementById('loc-limit-note');
   limitNote.style.display = state.locations.length === 3 ? 'block' : 'none';
   if (!state.locations.length) { el.innerHTML = ''; return; }
+
+  // Render öncesi mevcut input değerlerini state'e kaydet (kaybolmasın)
+  state.locations.forEach((l, i) => {
+    const inp = document.getElementById(`custom-name-${i}`);
+    if (inp && inp.value.trim()) l.customName = inp.value.trim();
+  });
+
   el.innerHTML = state.locations.map((l,i) => `
     <div class="selected-loc-item" style="flex-direction:column;gap:8px">
       <div style="display:flex;align-items:center;gap:10px;width:100%">
@@ -714,7 +721,7 @@ function renderSelectedLocs() {
       </div>
       <div style="display:flex;align-items:center;gap:8px;padding-left:32px">
         <span style="font-size:11px;color:var(--muted);white-space:nowrap">Raporda görünecek isim:</span>
-        <input type="text" value="${l.customName||l.name}" placeholder="Örn: Şişli Şubesi"
+        <input id="custom-name-${i}" type="text" value="${l.customName||''}" placeholder="${l.name}"
           oninput="state.locations[${i}].customName=this.value"
           style="border:1.5px solid var(--line);border-radius:6px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none;flex:1;color:var(--ink)">
       </div>
@@ -731,7 +738,7 @@ async function goStep3() {
     for (const loc of state.locations) {
       await api('/demo/add-location', 'POST', {
         user_id: USER_ID, brand_id: state.brandId,
-        name: (loc.customName||loc.name).trim() || loc.name,
+        name: (loc.customName||'').trim() || loc.name,
         address: loc.address,
         google_place_id: loc.placeId, lat: loc.lat, lng: loc.lng,
       });
