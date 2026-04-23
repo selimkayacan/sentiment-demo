@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Marka Algı Analizi — Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -402,33 +403,39 @@ h1{animation-delay:.2s}
 </footer>
 
 <script>
-const API_BASE = 'https://web-production-f48f6.up.railway.app';
+const API_BASE          = 'https://web-production-f48f6.up.railway.app';
+const SUPABASE_URL      = 'https://escjdzsfxzwvshapzugb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2pkenNmeHp3dnNoYXB6dWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzMzgsImV4cCI6MjA4OTg4MDMzOH0.ylywekAEhONMpx5RBCdZXafUna9jZcB19etFrEcRJe8';
+const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Daha önce demo başlattıysa dashboard'a yönlendir
+// Oturum kontrolü — Supabase session varsa yönlendir
 (async function checkExistingUser() {
-  const uid = localStorage.getItem('demo_uid');
-  if (!uid) return;
   try {
-    const resp = await fetch(`${API_BASE}/demo/status?uid=${uid}`);
-    if (!resp.ok) { localStorage.removeItem('demo_uid'); return; }
-    const s = await resp.json();
-    if (s.is_blocked) { localStorage.removeItem('demo_uid'); return; }
-    // Brand var ve analiz edilmişse dashboard'a at
-    if (s.brand_id && s.analyzed_count > 0) {
-      window.location.href = `./dashboard.html?uid=${uid}`;
+    // Önce Supabase session kontrol et
+    const { data: { session } } = await sbClient.auth.getSession();
+    if (session) {
+      // Oturum var — demo_status_by_email ile uid bul, yönlendir
+      const resp = await fetch(`${API_BASE}/demo/status-by-email?email=${encodeURIComponent(session.user.email)}`);
+      if (resp.ok) {
+        const s = await resp.json();
+        if (s.user_id && !s.is_blocked) {
+          localStorage.setItem('demo_uid', s.user_id);
+          if (s.brand_id && s.analyzed_count > 0) {
+            window.location.href = `./dashboard.html?uid=${s.user_id}`;
+          } else {
+            window.location.href = `./wizard.html?uid=${s.user_id}`;
+          }
+          return;
+        }
+      }
+      // Session var ama demo_users'da yok — login'e at
+      window.location.href = './login.html';
       return;
     }
-    // Brand var ama analiz yok — wizard'a at
-    if (s.brand_id) {
-      window.location.href = `./wizard.html?uid=${uid}`;
-      return;
-    }
-    // Onaylı ama marka yok — wizard'a at
-    if (s.is_confirmed) {
-      window.location.href = `./wizard.html?uid=${uid}`;
-    }
+    // Session yok — localStorage'ı temizle, formu göster
+    localStorage.removeItem('demo_uid');
   } catch(e) {
-    // Bağlantı hatası — formu göster
+    localStorage.removeItem('demo_uid');
   }
 })();
 
