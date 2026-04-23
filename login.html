@@ -149,6 +149,28 @@ body::before{
   </div>
 
   <div class="card">
+    <!-- ŞİFRE BELİRLEME PANELİ (reset linkinden gelince) -->
+    <div id="set-password-panel" style="display:none">
+      <p style="font-size:15px;color:var(--muted);margin-bottom:24px;line-height:1.6">
+        Lütfen yeni şifrenizi belirleyin.
+      </p>
+      <div class="field">
+        <label>Yeni Şifre</label>
+        <input type="password" id="new-pass" placeholder="En az 6 karakter"
+               onkeydown="if(event.key==='Enter')doSetPassword()">
+      </div>
+      <div class="field">
+        <label>Şifre Tekrar</label>
+        <input type="password" id="new-pass2" placeholder="Şifrenizi tekrar girin"
+               onkeydown="if(event.key==='Enter')doSetPassword()">
+      </div>
+      <button class="submit-btn" id="set-pass-btn" onclick="doSetPassword()">
+        <span id="set-pass-btn-text">Şifremi Kaydet</span>
+        <span>→</span>
+      </button>
+      <div class="error-msg" id="set-pass-error"></div>
+    </div>
+
     <!-- TAB -->
     <div class="tab-row" id="tab-row">
       <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Giriş Yap</button>
@@ -308,22 +330,43 @@ function showErr(id, msg) {
   el.style.display = 'block';
 }
 
+async function doSetPassword() {
+  const p1 = document.getElementById('new-pass').value;
+  const p2 = document.getElementById('new-pass2').value;
+  if (!p1 || p1.length < 6) { showErr('set-pass-error', 'Şifre en az 6 karakter olmalı'); return; }
+  if (p1 !== p2) { showErr('set-pass-error', 'Şifreler eşleşmiyor'); return; }
+  const btn = document.getElementById('set-pass-btn');
+  btn.disabled = true;
+  document.getElementById('set-pass-btn-text').textContent = 'Kaydediliyor...';
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  if (error) {
+    showErr('set-pass-error', error.message);
+    btn.disabled = false;
+    document.getElementById('set-pass-btn-text').textContent = 'Şifremi Kaydet';
+    return;
+  }
+  // Şifre belirlendi — oturumu al ve yönlendir
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await redirectUser(session.user);
+  else window.location.href = './login.html';
+}
+
 // Supabase şifre güncelleme callback'i (reset linkinden dönerken)
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
-    // Şifre güncelleme formuna yönlendir
-    const newPass = prompt('Yeni şifrenizi girin (en az 6 karakter):');
-    if (newPass && newPass.length >= 6) {
-      const { error } = await sb.auth.updateUser({ password: newPass });
-      if (!error) {
-        alert('Şifreniz güncellendi! Giriş yapabilirsiniz.');
-      } else {
-        alert('Hata: ' + error.message);
-      }
-    }
+    // Gerçek şifre belirleme formunu göster
+    document.getElementById('tab-row').style.display = 'none';
+    document.getElementById('login-panel').style.display = 'none';
+    document.getElementById('forgot-panel').style.display = 'none';
+    document.getElementById('set-password-panel').style.display = 'block';
   }
   if (event === 'SIGNED_IN' && session) {
-    await redirectUser(session.user);
+    // PASSWORD_RECOVERY sonrası SIGNED_IN gelirse yönlendirme doSetPassword'de yapılıyor
+    // Normal login için yönlendir
+    const panel = document.getElementById('set-password-panel');
+    if (panel.style.display === 'none' || !panel.style.display) {
+      await redirectUser(session.user);
+    }
   }
 });
 </script>
