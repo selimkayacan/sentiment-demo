@@ -9,241 +9,138 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --ink:#0f0f0f;--paper:#f5f0e8;--accent:#c8410a;
-  --accent2:#1e4d8c;--muted:#7a7060;--border:#d4cfc4;--white:#fff;
-}
-body{
-  background:var(--paper);color:var(--ink);
-  font-family:'DM Sans',sans-serif;
-  min-height:100vh;display:flex;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;
-}
-/* Arka plan doku */
-body::before{
-  content:'';position:fixed;inset:0;
-  background-image:radial-gradient(circle at 20% 50%, rgba(200,65,10,0.06) 0%, transparent 50%),
-                   radial-gradient(circle at 80% 20%, rgba(30,77,140,0.06) 0%, transparent 50%);
-  pointer-events:none;
-}
-
-.container{
-  width:100%;max-width:420px;padding:24px;
-  position:relative;z-index:1;
-}
-
-.logo{
-  text-align:center;margin-bottom:40px;
-  animation:fadeUp .5s both;
-}
-.logo-text{
-  font-family:'DM Serif Display',serif;font-size:22px;
-  letter-spacing:-0.3px;color:var(--ink);
-}
+:root{--ink:#0f0f0f;--paper:#f5f0e8;--accent:#c8410a;--accent2:#1e4d8c;--muted:#7a7060;--border:#d4cfc4;--white:#fff}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle at 20% 50%,rgba(200,65,10,.06) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(30,77,140,.06) 0%,transparent 50%);pointer-events:none}
+.container{width:100%;max-width:420px;padding:24px;position:relative;z-index:1}
+.logo{text-align:center;margin-bottom:40px}
+.logo-text{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink)}
 .logo-text span{color:var(--accent)}
-
-.card{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:6px;
-  padding:40px 36px;
-  box-shadow:0 8px 48px rgba(0,0,0,0.07);
-  animation:fadeUp .5s .1s both;
-}
-
-.card-title{
-  font-family:'DM Serif Display',serif;
-  font-size:26px;letter-spacing:-0.3px;
-  margin-bottom:6px;
-}
-.card-sub{
-  font-size:14px;color:var(--muted);margin-bottom:32px;line-height:1.6;
-}
-
-.tab-row{
-  display:flex;gap:0;margin-bottom:28px;
-  border:1.5px solid var(--border);border-radius:4px;overflow:hidden;
-}
-.tab-btn{
-  flex:1;padding:10px;font-family:inherit;font-size:13px;font-weight:500;
-  border:none;background:none;cursor:pointer;color:var(--muted);
-  transition:all .2s;
-}
+.card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:40px 36px;box-shadow:0 8px 48px rgba(0,0,0,.07)}
+.card-title{font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:8px}
+.card-sub{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.6}
+.tab-row{display:flex;margin-bottom:28px;border:1.5px solid var(--border);border-radius:4px;overflow:hidden}
+.tab-btn{flex:1;padding:10px;font-family:inherit;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--muted);transition:all .2s}
 .tab-btn.active{background:var(--ink);color:var(--paper)}
-
 .field{margin-bottom:18px}
-.field label{
-  display:block;font-size:11px;font-weight:600;
-  letter-spacing:.6px;text-transform:uppercase;
-  color:var(--muted);margin-bottom:7px;
-}
-.field input{
-  width:100%;padding:12px 14px;
-  border:1.5px solid var(--border);border-radius:3px;
-  font-size:14px;font-family:inherit;color:var(--ink);
-  background:var(--paper);outline:none;transition:border-color .2s;
-}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:3px;font-size:14px;font-family:inherit;color:var(--ink);background:var(--paper);outline:none;transition:border-color .2s}
 .field input:focus{border-color:var(--accent2);background:var(--white)}
 .field input::placeholder{color:#b0a898}
-
-.submit-btn{
-  width:100%;padding:13px;margin-top:8px;
-  background:var(--ink);color:var(--paper);
-  border:none;border-radius:3px;
-  font-family:inherit;font-size:15px;font-weight:500;
-  cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-}
-.submit-btn:hover:not(:disabled){background:var(--accent);transform:translateY(-1px)}
-.submit-btn:disabled{opacity:.5;cursor:default}
-
-.error-msg{
-  display:none;font-size:13px;color:#c8410a;
-  margin-top:12px;padding:10px 12px;
-  background:#c8410a10;border-radius:3px;border:1px solid #c8410a30;
-}
-.success-msg{
-  display:none;font-size:13px;color:#166534;
-  margin-top:12px;padding:10px 12px;
-  background:#dcfce7;border-radius:3px;border:1px solid #86efac;
-  line-height:1.6;
-}
-
-.divider{
-  display:flex;align-items:center;gap:12px;
-  margin:20px 0;color:var(--muted);font-size:12px;
-}
-.divider::before,.divider::after{
-  content:'';flex:1;height:1px;background:var(--border);
-}
-
-.back-link{
-  display:block;text-align:center;margin-top:20px;
-  font-size:13px;color:var(--muted);text-decoration:none;
-  transition:color .2s;
-}
-.back-link:hover{color:var(--ink)}
+.btn{width:100%;padding:13px;margin-top:8px;background:var(--ink);color:var(--paper);border:none;border-radius:3px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover:not(:disabled){background:var(--accent);transform:translateY(-1px)}
+.btn:disabled{opacity:.5;cursor:default;transform:none}
+.error-msg{display:none;font-size:13px;color:#c8410a;margin-top:12px;padding:10px 12px;background:#c8410a10;border-radius:3px;border:1px solid #c8410a30}
+.success-msg{display:none;font-size:13px;color:#166534;margin-top:12px;padding:10px 12px;background:#dcfce7;border-radius:3px;border:1px solid #86efac;line-height:1.6}
+.back-link{display:block;text-align:center;margin-top:20px;font-size:13px;color:var(--muted);text-decoration:none}
 .back-link span{color:var(--accent2);font-weight:500}
-
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(14px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-/* Şifremi unuttum panel */
-.forgot-panel{display:none}
-.forgot-back{
-  background:none;border:none;cursor:pointer;
-  font-family:inherit;font-size:13px;color:var(--muted);
-  margin-bottom:20px;padding:0;display:flex;align-items:center;gap:6px;
-  transition:color .2s;
-}
-.forgot-back:hover{color:var(--ink)}
+.panel{display:none}
+.panel.active{display:block}
 </style>
 </head>
 <body>
-
 <div class="container">
-  <div class="logo">
-    <div class="logo-text">marka <span>algı</span> analizi</div>
-  </div>
-
+  <div class="logo"><div class="logo-text">marka <span>algı</span> analizi</div></div>
   <div class="card">
-    <!-- ŞİFRE BELİRLEME PANELİ (reset linkinden gelince) -->
-    <div id="set-password-panel" style="display:none">
-      <p style="font-size:15px;color:var(--muted);margin-bottom:24px;line-height:1.6">
-        Lütfen yeni şifrenizi belirleyin.
-      </p>
+
+    <!-- ŞİFRE OLUŞTUR -->
+    <div class="panel" id="panel-set-password">
+      <div class="card-title">Şifrenizi oluşturun</div>
+      <div class="card-sub">Demo hesabınız hazır. Şifrenizi belirleyin ve platforma girin.</div>
       <div class="field">
         <label>Yeni Şifre</label>
-        <input type="password" id="new-pass" placeholder="En az 6 karakter"
-               onkeydown="if(event.key==='Enter')doSetPassword()">
+        <input type="password" id="new-pass" placeholder="En az 6 karakter" onkeydown="if(event.key==='Enter')doSetPassword()">
       </div>
       <div class="field">
         <label>Şifre Tekrar</label>
-        <input type="password" id="new-pass2" placeholder="Şifrenizi tekrar girin"
-               onkeydown="if(event.key==='Enter')doSetPassword()">
+        <input type="password" id="new-pass2" placeholder="Şifrenizi tekrar girin" onkeydown="if(event.key==='Enter')doSetPassword()">
       </div>
-      <button class="submit-btn" id="set-pass-btn" onclick="doSetPassword()">
-        <span id="set-pass-btn-text">Şifremi Kaydet</span>
-        <span>→</span>
+      <button class="btn" id="set-btn" onclick="doSetPassword()">
+        <span id="set-btn-text">Şifremi Kaydet ve Devam Et</span><span>→</span>
       </button>
-      <div class="error-msg" id="set-pass-error"></div>
+      <div class="error-msg" id="set-error"></div>
     </div>
 
-    <!-- TAB -->
-    <div class="tab-row" id="tab-row">
-      <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Giriş Yap</button>
-      <button class="tab-btn" id="tab-forgot" onclick="switchTab('forgot')">Şifremi Unuttum</button>
-    </div>
-
-    <!-- GİRİŞ PANELİ -->
-    <div id="login-panel">
-      <div class="field">
-        <label>E-posta</label>
-        <input type="email" id="login-email" placeholder="ad@firma.com" autocomplete="email"
-               onkeydown="if(event.key==='Enter')doLogin()">
+    <!-- GİRİŞ YAP -->
+    <div class="panel" id="panel-login">
+      <div class="tab-row">
+        <button class="tab-btn active" id="tab-btn-login" onclick="showTab('login')">Giriş Yap</button>
+        <button class="tab-btn" id="tab-btn-forgot" onclick="showTab('forgot')">Şifremi Unuttum</button>
       </div>
-      <div class="field">
-        <label>Şifre</label>
-        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
-               onkeydown="if(event.key==='Enter')doLogin()">
+      <div id="tab-login-content">
+        <div class="field">
+          <label>E-posta</label>
+          <input type="email" id="login-email" placeholder="ad@firma.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="field">
+          <label>Şifre</label>
+          <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="btn" id="login-btn" onclick="doLogin()">
+          <span id="login-btn-text">Giriş Yap</span><span>→</span>
+        </button>
+        <div class="error-msg" id="login-error"></div>
       </div>
-      <button class="submit-btn" id="login-btn" onclick="doLogin()">
-        <span id="login-btn-text">Giriş Yap</span>
-        <span id="login-btn-arrow">→</span>
-      </button>
-      <div class="error-msg" id="login-error"></div>
-    </div>
-
-    <!-- ŞİFREMİ UNUTTUM PANELİ -->
-    <div id="forgot-panel" class="forgot-panel">
-      <p style="font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.6">
-        Mail adresinizi girin, şifre sıfırlama linki gönderelim.
-      </p>
-      <div class="field">
-        <label>E-posta</label>
-        <input type="email" id="forgot-email" placeholder="ad@firma.com"
-               onkeydown="if(event.key==='Enter')doForgot()">
+      <div id="tab-forgot-content" style="display:none">
+        <div class="card-sub" style="margin-bottom:16px">Mail adresinizi girin, şifre sıfırlama linki gönderelim.</div>
+        <div class="field">
+          <label>E-posta</label>
+          <input type="email" id="forgot-email" placeholder="ad@firma.com" onkeydown="if(event.key==='Enter')doForgot()">
+        </div>
+        <button class="btn" id="forgot-btn" onclick="doForgot()">
+          <span id="forgot-btn-text">Link Gönder</span><span>→</span>
+        </button>
+        <div class="error-msg" id="forgot-error"></div>
+        <div class="success-msg" id="forgot-success"></div>
       </div>
-      <button class="submit-btn" id="forgot-btn" onclick="doForgot()">
-        <span id="forgot-btn-text">Link Gönder</span>
-        <span>→</span>
-      </button>
-      <div class="error-msg" id="forgot-error"></div>
-      <div class="success-msg" id="forgot-success"></div>
     </div>
 
   </div>
-
   <a href="./index.html" class="back-link">Demo hesabı yok mu? <span>Başvur →</span></a>
 </div>
 
 <script>
 const SUPABASE_URL      = 'https://escjdzsfxzwvshapzugb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2pkenNmeHp3dnNoYXB6dWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzMzgsImV4cCI6MjA4OTg4MDMzOH0.ylywekAEhONMpx5RBCdZXafUna9jZcB19etFrEcRJe8';
-const API_BASE          = 'https://web-production-f48f6.up.railway.app';
-
+const API_BASE = 'https://web-production-f48f6.up.railway.app';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Zaten oturum açıksa yönlendir
-(async function checkSession() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) await redirectUser(session.user);
-})();
+const params = new URLSearchParams(window.location.search);
+const TOKEN  = params.get('token');
+const UID    = params.get('uid');
 
-async function redirectUser(user) {
+window.addEventListener('DOMContentLoaded', async () => {
+  if (TOKEN && UID) {
+    showPanel('set-password');
+  } else {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { await redirectUser(session.user.email); return; }
+    showPanel('login');
+  }
+});
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+function showTab(tab) {
+  document.getElementById('tab-login-content').style.display  = tab === 'login'  ? 'block' : 'none';
+  document.getElementById('tab-forgot-content').style.display = tab === 'forgot' ? 'block' : 'none';
+  document.getElementById('tab-btn-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-btn-forgot').classList.toggle('active', tab === 'forgot');
+}
+
+async function redirectUser(email) {
   try {
-    const resp = await fetch(`${API_BASE}/demo/status-by-email?email=${encodeURIComponent(user.email)}`);
+    const resp = await fetch(`${API_BASE}/demo/status-by-email?email=${encodeURIComponent(email)}`);
     if (resp.ok) {
       const s = await resp.json();
       if (s.user_id) {
         localStorage.setItem('demo_uid', s.user_id);
-        if (s.brand_id && s.analyzed_count > 0) {
-          window.location.href = `./dashboard.html?uid=${s.user_id}`;
-        } else {
-          window.location.href = `./wizard.html?uid=${s.user_id}`;
-        }
+        window.location.href = (s.brand_id && s.analyzed_count > 0)
+          ? `./dashboard.html?uid=${s.user_id}`
+          : `./wizard.html?uid=${s.user_id}`;
         return;
       }
     }
@@ -251,73 +148,94 @@ async function redirectUser(user) {
   window.location.href = './wizard.html';
 }
 
-function switchTab(tab) {
-  document.getElementById('login-panel').style.display  = tab === 'login'  ? 'block' : 'none';
-  document.getElementById('forgot-panel').style.display = tab === 'forgot' ? 'block' : 'none';
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-forgot').classList.toggle('active', tab === 'forgot');
-  // Hataları temizle
-  ['login-error','forgot-error','forgot-success'].forEach(id => {
-    document.getElementById(id).style.display = 'none';
-  });
+async function doSetPassword() {
+  const p1  = document.getElementById('new-pass').value;
+  const p2  = document.getElementById('new-pass2').value;
+  const btn = document.getElementById('set-btn');
+  document.getElementById('set-error').style.display = 'none';
+
+  if (!p1 || p1.length < 6) { showErr('set-error', 'Şifre en az 6 karakter olmalı'); return; }
+  if (p1 !== p2)             { showErr('set-error', 'Şifreler eşleşmiyor'); return; }
+
+  btn.disabled = true;
+  document.getElementById('set-btn-text').textContent = 'Kaydediliyor...';
+
+  try {
+    const resp = await fetch(`${API_BASE}/demo/set-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: TOKEN, uid: UID, password: p1 }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showErr('set-error', data.error || 'Hata oluştu');
+      btn.disabled = false;
+      document.getElementById('set-btn-text').textContent = 'Şifremi Kaydet ve Devam Et';
+      return;
+    }
+
+    // Supabase ile giriş yap
+    const { data: authData, error } = await sb.auth.signInWithPassword({
+      email: data.email,
+      password: p1,
+    });
+
+    if (error || !authData?.user) {
+      // Supabase girişi başarısız — uid ile direkt yönlendir
+      localStorage.setItem('demo_uid', data.user_id);
+      window.location.href = `./wizard.html?uid=${data.user_id}`;
+      return;
+    }
+
+    await redirectUser(authData.user.email);
+  } catch(e) {
+    showErr('set-error', 'Bağlantı hatası, tekrar deneyin');
+    btn.disabled = false;
+    document.getElementById('set-btn-text').textContent = 'Şifremi Kaydet ve Devam Et';
+  }
 }
 
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
-  const errEl = document.getElementById('login-error');
   const btn   = document.getElementById('login-btn');
-  errEl.style.display = 'none';
+  document.getElementById('login-error').style.display = 'none';
 
   if (!email || !pass) { showErr('login-error', 'E-posta ve şifre zorunlu'); return; }
 
   btn.disabled = true;
   document.getElementById('login-btn-text').textContent = 'Giriş yapılıyor...';
-  document.getElementById('login-btn-arrow').textContent = '⏳';
 
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
-
-    // Demo kullanıcısı mı kontrol et
-    const meta = data.user?.app_metadata || {};
-    const role  = meta.role || data.user?.user_metadata?.role || '';
-    if (role !== 'demo' && role !== 'admin') {
-      await sb.auth.signOut();
-      throw new Error('Bu hesap demo platformuna erişemez.');
-    }
-
-    await redirectUser(data.user);
+    await redirectUser(data.user.email);
   } catch(e) {
     let msg = e.message || 'Giriş başarısız';
     if (msg.includes('Invalid login')) msg = 'E-posta veya şifre hatalı';
-    if (msg.includes('Email not confirmed')) msg = 'Mail adresinizi henüz doğrulamadınız. Gelen kutunuzu kontrol edin.';
     showErr('login-error', msg);
     btn.disabled = false;
     document.getElementById('login-btn-text').textContent = 'Giriş Yap';
-    document.getElementById('login-btn-arrow').textContent = '→';
   }
 }
 
 async function doForgot() {
   const email = document.getElementById('forgot-email').value.trim();
-  if (!email) { showErr('forgot-error', 'E-posta adresinizi girin'); return; }
-
+  if (!email) { showErr('forgot-error', 'E-posta giriniz'); return; }
   const btn = document.getElementById('forgot-btn');
   btn.disabled = true;
   document.getElementById('forgot-btn-text').textContent = 'Gönderiliyor...';
-
   try {
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login.html`,
+    await fetch(`${API_BASE}/demo/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
     });
-    if (error) throw error;
-    document.getElementById('forgot-success').textContent =
-      `✓ Şifre sıfırlama linki ${email} adresine gönderildi.`;
+    document.getElementById('forgot-success').textContent = '✓ Şifre sıfırlama linki gönderildi.';
     document.getElementById('forgot-success').style.display = 'block';
     document.getElementById('forgot-error').style.display = 'none';
   } catch(e) {
-    showErr('forgot-error', e.message || 'Bir hata oluştu');
+    showErr('forgot-error', 'Hata oluştu');
   } finally {
     btn.disabled = false;
     document.getElementById('forgot-btn-text').textContent = 'Link Gönder';
@@ -329,46 +247,6 @@ function showErr(id, msg) {
   el.textContent = msg;
   el.style.display = 'block';
 }
-
-async function doSetPassword() {
-  const p1 = document.getElementById('new-pass').value;
-  const p2 = document.getElementById('new-pass2').value;
-  if (!p1 || p1.length < 6) { showErr('set-pass-error', 'Şifre en az 6 karakter olmalı'); return; }
-  if (p1 !== p2) { showErr('set-pass-error', 'Şifreler eşleşmiyor'); return; }
-  const btn = document.getElementById('set-pass-btn');
-  btn.disabled = true;
-  document.getElementById('set-pass-btn-text').textContent = 'Kaydediliyor...';
-  const { error } = await sb.auth.updateUser({ password: p1 });
-  if (error) {
-    showErr('set-pass-error', error.message);
-    btn.disabled = false;
-    document.getElementById('set-pass-btn-text').textContent = 'Şifremi Kaydet';
-    return;
-  }
-  // Şifre belirlendi — oturumu al ve yönlendir
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) await redirectUser(session.user);
-  else window.location.href = './login.html';
-}
-
-// Supabase şifre güncelleme callback'i (reset linkinden dönerken)
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'PASSWORD_RECOVERY') {
-    // Gerçek şifre belirleme formunu göster
-    document.getElementById('tab-row').style.display = 'none';
-    document.getElementById('login-panel').style.display = 'none';
-    document.getElementById('forgot-panel').style.display = 'none';
-    document.getElementById('set-password-panel').style.display = 'block';
-  }
-  if (event === 'SIGNED_IN' && session) {
-    // PASSWORD_RECOVERY sonrası SIGNED_IN gelirse yönlendirme doSetPassword'de yapılıyor
-    // Normal login için yönlendir
-    const panel = document.getElementById('set-password-panel');
-    if (panel.style.display === 'none' || !panel.style.display) {
-      await redirectUser(session.user);
-    }
-  }
-});
 </script>
 </body>
 </html>
