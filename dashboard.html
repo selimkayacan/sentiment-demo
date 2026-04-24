@@ -308,6 +308,17 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
         <div class="stat stat-green"><div class="stat-label">Pozitif</div><div class="stat-value" id="soc-pos">—</div></div>
         <div class="stat stat-red"><div class="stat-label">Negatif</div><div class="stat-value" id="soc-neg">—</div></div>
       </div>
+      <div class="card mb24">
+        <div class="card-header">
+          <span class="card-title">Sosyal Medya Trendi</span>
+          <select id="soc-trend-period" onchange="renderSocialTrend()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
+            <option value="12">Son 12 Ay</option>
+            <option value="6">Son 6 Ay</option>
+            <option value="0">Tümü</option>
+          </select>
+        </div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="social-trend-chart"></canvas></div></div>
+      </div>
       <div class="card">
         <div class="card-header">
           <span class="card-title">Sosyal Medya Yorumları</span>
@@ -343,7 +354,16 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 </div>
 
 <script>
-const API = 'https://web-production-f48f6.up.railway.app';
+const API             = 'https://web-production-f48f6.up.railway.app';
+const SUPABASE_URL    = 'https://escjdzsfxzwvshapzugb.supabase.co';
+const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2pkenNmeHp3dnNoYXB6dWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzMzgsImV4cCI6MjA4OTg4MDMzOH0.ylywekAEhONMpx5RBCdZXafUna9jZcB19etFrEcRJe8';
+const sbClient        = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+async function doSignOut(){
+  await sbClient.auth.signOut();
+  localStorage.removeItem('demo_uid');
+  window.location.href = './login.html';
+}
 let uid, DATA = null, trendChart = null, locTrendChart = null, catChart = null, compareChart = null;
 let currentOpenLocId = null, socSource = 'all', _activeCatFilter = null;
 let compareRawData = {}; // {locId: {name, reviews}}
@@ -389,8 +409,11 @@ async function loadData(){
 }
 
 async function reloadData(){
-  try{ DATA=await loadData(); render(); }
+  const btn=document.querySelector('button[onclick="reloadData()"]');
+  if(btn){btn.textContent='↻ Yükleniyor...';btn.disabled=true;}
+  try{ DATA=await loadData(); render(); checkPolling(); }
   catch(e){ alert('Veri yüklenemedi: '+e.message); }
+  finally{ if(btn){btn.textContent='↻ Yenile';btn.disabled=false;} }
 }
 
 function goTab(tab){
@@ -399,7 +422,7 @@ function goTab(tab){
   document.getElementById('tab-'+tab).classList.add('active');
   if(!DATA) return;
   if(tab==='locations')  renderLocations();
-  if(tab==='social')     renderSocial();
+  if(tab==='social')     { renderSocial(); renderSocialTrend(); }
   if(tab==='categories') renderCategories();
 }
 
@@ -468,15 +491,40 @@ function renderOverview(){
 function renderCatTags(cats, containerId){
   const el=document.getElementById(containerId);
   if(!cats||!Object.keys(cats).length){ el.innerHTML='<div class="empty">Kategori verisi yok</div>'; return; }
+  const isLocTab = containerId === 'loc-cat-tags';
   el.innerHTML=Object.entries(cats).sort((a,b)=>b[1].total-a[1].total).map(([name,c])=>{
     const pr=c.total?c.pos/c.total:0,nr=c.total?c.neg/c.total:0;
     let cls='tag-neutral',icon='●';
     if(pr>0.6){cls='tag-green';icon='▲';}
     else if(nr>0.4){cls='tag-red';icon='▼';}
     else if(nr>0.2){cls='tag-amber';icon='◆';}
-    return `<span class="tag ${cls}" onclick="handleCatTag('${encodeURIComponent(name)}')"
+    const handler = isLocTab
+      ? `handleLocCatTag('${encodeURIComponent(name)}')`
+      : `handleCatTag('${encodeURIComponent(name)}')`;
+    return `<span class="tag ${cls}" onclick="${handler}"
       data-catname="${encodeURIComponent(name)}">${icon} ${name} <span class="tag-count">${c.total}</span></span>`;
   }).join('');
+}
+
+function handleLocCatTag(encodedName){
+  const catName=decodeURIComponent(encodedName);
+  if(!currentOpenLocId) return;
+  const locRevs=(DATA.all_reviews||[]).filter(r=>r.location_id===currentOpenLocId);
+
+  // Toggle
+  const catSel=document.getElementById('loc-cat-filter');
+  if(catSel){
+    catSel.value = catSel.value===catName ? '' : catName;
+  }
+  const activeCat = catSel?.value||'';
+
+  // Tag görünümü
+  document.querySelectorAll('#loc-cat-tags .tag').forEach(t=>{
+    t.style.opacity = (!activeCat || decodeURIComponent(t.dataset.catname||'')==activeCat) ? '1' : '0.4';
+  });
+
+  renderLocReviews(locRevs, activeCat);
+  drawLocTrend(currentOpenLocId, locRevs, activeCat);
 }
 
 function handleCatTag(encodedName){
@@ -767,11 +815,52 @@ function clearCompare(){
   document.getElementById('loc-compare-section').style.display='none';
 }
 
+let socialTrendChart = null;
+
+function renderSocialTrend(){
+  const ctx = document.getElementById('social-trend-chart')?.getContext('2d');
+  if(!ctx || !DATA?.social_reviews) return;
+  const period = parseInt(document.getElementById('soc-trend-period')?.value||'12');
+  const cutoff = period>0?new Date(Date.now()-period*30*24*3600*1000).toISOString().slice(0,7):'2000-01';
+  let revs = DATA.social_reviews||[];
+  if(socSource!=='all'){
+    const cid=DATA.connectors.find(c=>c.key===socSource)?.connector_id;
+    if(cid) revs=revs.filter(r=>r.connector_id===cid);
+  }
+  const months={};
+  revs.forEach(r=>{
+    if(!r.review_date||!r.sentiment_score) return;
+    const mo=r.review_date.slice(0,7);
+    if(mo<cutoff) return;
+    if(!months[mo]) months[mo]={scores:[],count:0};
+    months[mo].scores.push(r.sentiment_score);
+    months[mo].count++;
+  });
+  const labels=Object.keys(months).sort();
+  const scores=labels.map(m=>Math.round(months[m].scores.reduce((s,v)=>s+v,0)/months[m].scores.length));
+  const counts=labels.map(m=>months[m].count);
+  if(socialTrendChart) socialTrendChart.destroy();
+  if(!labels.length) return;
+  socialTrendChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:labels.map(l=>{const[y,m]=l.split('-');return new Date(y,m-1).toLocaleDateString('tr-TR',{month:'short',year:'2-digit'});}),
+      datasets:[{label:'Sosyal Skor',data:scores,borderColor:'#0f766e',backgroundColor:'rgba(15,118,110,.07)',
+        fill:true,tension:0.4,spanGaps:true,pointRadius:counts.map(c=>c>=3?5:3),
+        pointBackgroundColor:counts.map(c=>c>=3?'#0f766e':'#cbd5e1')}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Skor: ${c.raw} (${counts[c.dataIndex]} yorum)`}}},
+      scales:{y:{min:0,max:100,ticks:{stepSize:25},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}
+  });
+}
+
 function setSocSource(src,btn){
   socSource=src;
   document.querySelectorAll('.social-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderSocial();
+  renderSocialTrend();
 }
 
 function renderSocial(){
