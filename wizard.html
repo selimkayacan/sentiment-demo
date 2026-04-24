@@ -713,6 +713,13 @@ function renderSelectedLocs() {
   const limitNote = document.getElementById('loc-limit-note');
   limitNote.style.display = state.locations.length === 3 ? 'block' : 'none';
   if (!state.locations.length) { el.innerHTML = ''; return; }
+
+  // Re-render öncesi input değerlerini state'e kaydet
+  state.locations.forEach((l, i) => {
+    const inp = document.getElementById('loc-name-' + i);
+    if (inp && inp.value.trim()) l.customName = inp.value.trim();
+  });
+
   el.innerHTML = state.locations.map((l,i) => `
     <div class="selected-loc-item" style="flex-direction:column;gap:8px">
       <div style="display:flex;align-items:center;gap:10px;width:100%">
@@ -723,11 +730,11 @@ function renderSelectedLocs() {
         </div>
         <button class="sel-loc-remove" onclick="removeLoc(${i})">×</button>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;padding-left:32px">
-        <span style="font-size:11px;color:var(--muted);white-space:nowrap">Raporda görünecek isim:</span>
-        <input type="text" value="${l.customName||l.name}" placeholder="Örn: Şişli Şubesi"
+      <div style="display:flex;align-items:center;gap:8px;padding-left:32px;margin-top:4px">
+        <span style="font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.4px">Rapordaki adı:</span>
+        <input id="loc-name-${i}" type="text" value="${l.customName||''}" placeholder="${l.name}"
           oninput="state.locations[${i}].customName=this.value"
-          style="border:1.5px solid var(--line);border-radius:6px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none;flex:1;color:var(--ink)">
+          style="border:1.5px solid var(--border);border-radius:3px;padding:6px 10px;font-family:inherit;font-size:13px;outline:none;flex:1;color:var(--ink);background:var(--white)">
       </div>
     </div>
   `).join('');
