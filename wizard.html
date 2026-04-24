@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Kurulum — Marka Algı Analizi</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -313,7 +312,8 @@ h2{font-family:'DM Serif Display',serif;font-size:38px;line-height:1.1;letter-sp
     </div>
     <div class="sidebar-footer">
       Demo platformu · 7 günlük erişim<br>
-      Her şey şifreli ve güvenli
+      Her şey şifreli ve güvenli<br><br>
+      <span onclick="doSignOut()" style="cursor:pointer;color:#c8410a;font-size:11px">⎋ Çıkış Yap</span>
     </div>
   </aside>
 
@@ -527,6 +527,12 @@ const API_BASE = 'https://web-production-f48f6.up.railway.app';
 const SUPABASE_URL      = 'https://escjdzsfxzwvshapzugb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2pkenNmeHp3dnNoYXB6dWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzMzgsImV4cCI6MjA4OTg4MDMzOH0.ylywekAEhONMpx5RBCdZXafUna9jZcB19etFrEcRJe8';
 const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function doSignOut() {
+  await sbClient.auth.signOut();
+  localStorage.removeItem('demo_uid');
+  window.location.href = './login.html';
+}
 // Lokasyon araması analysis engine proxy üzerinden geçer — secret gizli kalır
 
 // URL'den user_id al
@@ -539,33 +545,16 @@ let state = {
   brandName: '',
   locations: [],
   searchTerms: [],
-  excludeTerms: ['çekiliş', 'kupon', 'coin', 'kripto', 'nft', 'airdrop', 'kazan'],
+  excludeTerms: [],
   sources: [],
   email: '',
 };
 
 // ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  // USER_ID yoksa Supabase session'dan al
   if (!USER_ID) {
-    const { data: { session } } = await sbClient.auth.getSession();
-    if (!session) {
-      window.location.href = './login.html';
-      return;
-    }
-    // Session'dan email ile uid bul
-    try {
-      const resp = await fetch(`${API_BASE}/demo/status-by-email?email=${encodeURIComponent(session.user.email)}`);
-      if (resp.ok) {
-        const s = await resp.json();
-        if (s.user_id) {
-          localStorage.setItem('demo_uid', s.user_id);
-          window.location.href = `./wizard.html?uid=${s.user_id}`;
-          return;
-        }
-      }
-    } catch(e) {}
-    window.location.href = './login.html';
+    alert('Geçersiz bağlantı. Lütfen kayıt olun.');
+    window.location.href = '/';
     return;
   }
 
@@ -723,13 +712,6 @@ function renderSelectedLocs() {
   const limitNote = document.getElementById('loc-limit-note');
   limitNote.style.display = state.locations.length === 3 ? 'block' : 'none';
   if (!state.locations.length) { el.innerHTML = ''; return; }
-
-  // Render öncesi mevcut input değerlerini state'e kaydet (kaybolmasın)
-  state.locations.forEach((l, i) => {
-    const inp = document.getElementById(`custom-name-${i}`);
-    if (inp && inp.value.trim()) l.customName = inp.value.trim();
-  });
-
   el.innerHTML = state.locations.map((l,i) => `
     <div class="selected-loc-item" style="flex-direction:column;gap:8px">
       <div style="display:flex;align-items:center;gap:10px;width:100%">
@@ -742,7 +724,7 @@ function renderSelectedLocs() {
       </div>
       <div style="display:flex;align-items:center;gap:8px;padding-left:32px">
         <span style="font-size:11px;color:var(--muted);white-space:nowrap">Raporda görünecek isim:</span>
-        <input id="custom-name-${i}" type="text" value="${l.customName||''}" placeholder="${l.name}"
+        <input type="text" value="${l.customName||l.name}" placeholder="Örn: Şişli Şubesi"
           oninput="state.locations[${i}].customName=this.value"
           style="border:1.5px solid var(--line);border-radius:6px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none;flex:1;color:var(--ink)">
       </div>
@@ -759,7 +741,7 @@ async function goStep3() {
     for (const loc of state.locations) {
       await api('/demo/add-location', 'POST', {
         user_id: USER_ID, brand_id: state.brandId,
-        name: (loc.customName||'').trim() || loc.name,
+        name: (loc.customName||loc.name).trim() || loc.name,
         address: loc.address,
         google_place_id: loc.placeId, lat: loc.lat, lng: loc.lng,
       });
