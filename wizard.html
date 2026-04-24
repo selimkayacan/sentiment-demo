@@ -342,15 +342,22 @@ h2{font-family:'DM Serif Display',serif;font-size:38px;line-height:1.1;letter-sp
     <div class="step-page" id="step-2">
       <div class="step-tag">Adım 2 / 8</div>
       <h2>3 şube seçin</h2>
-      <p class="step-desc">Google Maps'ten <strong id="brand-name-preview">Markanız</strong> için 3 lokasyon seçin. Bu lokasyonlar için yorum analizi yapılacak.</p>
+      <p class="step-desc">
+        <strong id="brand-name-preview">Markanız</strong>'ın analiz etmek istediğiniz şubelerini aşağıdan bulun ve seçin.
+        Arama kutusuna <strong>şubenin adını ve bulunduğu şehir, ilçe veya AVM adını</strong> yazın.
+      </p>
       
       <div id="selected-locs-container"></div>
       <div class="loc-limit-note" id="loc-limit-note">✓ 3 lokasyon seçildi. Devam edebilirsiniz.</div>
 
       <div class="search-row">
-        <input type="text" id="loc-search" placeholder="Örn: Lacoste Nişantaşı İstanbul"
+        <input type="text" id="loc-search" 
+               placeholder="Örn: Zara Nişantaşı City's veya Migros Ataşehir"
                onkeydown="if(event.key==='Enter')searchLoc()">
         <button class="search-btn" id="loc-search-btn" onclick="searchLoc()">Ara</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
+        💡 Arama yalnızca <strong>Türkiye</strong> lokasyonlarını getirir. Şube adına ek olarak şehir veya AVM adı yazarsanız sonuçlar daha isabetli olur.
       </div>
       <div class="loc-results" id="loc-results"></div>
       <div class="alert alert-error" id="step2-err"></div>
@@ -646,8 +653,12 @@ async function goStep2() {
 // ── LOKASYON ARAMA ────────────────────────────────────────────
 async function searchLoc() {
   if (state.locations.length >= 3) return;
-  const q = document.getElementById('loc-search').value.trim();
-  if (!q) return;
+  const raw = document.getElementById('loc-search').value.trim();
+  if (!raw) return;
+  // Türkiye sınırlarını garanti et
+  const q = raw.toLowerCase().includes('türkiye') || raw.toLowerCase().includes('turkey')
+    ? raw
+    : raw + ' Türkiye';
 
   const btn = document.getElementById('loc-search-btn');
   btn.disabled = true; btn.textContent = 'Aranıyor...';
