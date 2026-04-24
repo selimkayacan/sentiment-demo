@@ -546,7 +546,7 @@ let state = {
   brandName: '',
   locations: [],
   searchTerms: [],
-  excludeTerms: [],
+  excludeTerms: ['çekiliş', 'kupon', 'coin', 'kripto', 'nft', 'airdrop', 'kazan'],
   sources: [],
   email: '',
 };
@@ -622,6 +622,7 @@ function goStep(n) {
   });
   currentStep = n;
   window.scrollTo({top:0,behavior:'smooth'});
+  if (n === 3) renderChips();
   if (n === 6) buildLocSummary();
 }
 
