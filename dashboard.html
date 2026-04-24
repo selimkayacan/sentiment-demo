@@ -204,6 +204,9 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
         <div class="card-header">
           <span class="card-title">Sentiment Trendi</span>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select id="trend-cat-filter" onchange="renderTrend()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
+              <option value="">Tüm Kategoriler</option>
+            </select>
             <select id="trend-period" onchange="renderTrend()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
               <option value="12">Son 12 Ay</option>
               <option value="6">Son 6 Ay</option>
@@ -236,22 +239,64 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
     <!-- ŞUBELER -->
     <div class="page" id="tab-locations">
       <div class="loc-grid mb24" id="loc-grid"><div class="empty"><span class="spinner"></span></div></div>
+
+      <!-- ŞUBE DETAY -->
       <div id="loc-detail" style="display:none">
-        <div class="card">
+        <div class="card mb24">
           <div class="card-header">
             <span class="card-title" id="loc-detail-name">Şube Detayı</span>
-            <select id="loc-period" onchange="reloadLocTrend()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
-              <option value="12">Son 12 Ay</option>
-              <option value="6">Son 6 Ay</option>
-              <option value="0">Tümü</option>
-            </select>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select id="loc-cat-filter" onchange="reloadLocTrend()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
+                <option value="">Tüm Kategoriler</option>
+              </select>
+              <select id="loc-period" onchange="reloadLocTrend()" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;outline:none">
+                <option value="12">Son 12 Ay</option>
+                <option value="6">Son 6 Ay</option>
+                <option value="0">Tümü</option>
+              </select>
+              <button class="btn btn-outline btn-sm" id="btn-add-compare" onclick="addToCompare()">+ Karşılaştır</button>
+              <button class="btn btn-outline btn-sm" onclick="closeLoc()">Kapat</button>
+            </div>
           </div>
           <div class="card-body">
             <div class="chart-wrap mb24" style="margin-bottom:20px"><canvas id="loc-trend-chart"></canvas></div>
             <div class="tag-grid mb24" style="margin-bottom:16px" id="loc-cat-tags"></div>
-            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">En Olumsuz Yorumlar</div>
-            <div class="review-list" id="loc-reviews"></div>
+            <div class="grid-2">
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:10px">▼ En Olumsuz</div>
+                <div class="review-list" id="loc-reviews-neg"></div>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--green);margin-bottom:10px">▲ En Olumlu</div>
+                <div class="review-list" id="loc-reviews-pos"></div>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ŞUBE KARŞILAŞTIRMA -->
+      <div id="loc-compare-section" style="display:none;margin-bottom:20px">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📊 Şube Karşılaştırması</span>
+            <button class="btn btn-outline btn-sm" onclick="clearCompare()">Temizle</button>
+          </div>
+          <div class="card-body">
+            <div id="loc-compare-labels" style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap"></div>
+            <div class="chart-wrap"><canvas id="loc-compare-chart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RAKİP KARŞILAŞTIRMA (yakında) -->
+      <div class="card" style="opacity:.6">
+        <div class="card-header">
+          <span class="card-title">🆚 Rakip Karşılaştırması</span>
+          <span style="font-size:11px;background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:10px;font-weight:700">Yakında</span>
+        </div>
+        <div class="card-body">
+          <div class="empty" style="padding:24px">Bu özellik henüz aktif değil. Yakında rakiplerinizin şubeleriyle karşılaştırma yapabileceksiniz.</div>
         </div>
       </div>
     </div>
@@ -299,8 +344,10 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 
 <script>
 const API = 'https://web-production-f48f6.up.railway.app';
-let uid, DATA = null, trendChart = null, locTrendChart = null, catChart = null;
+let uid, DATA = null, trendChart = null, locTrendChart = null, catChart = null, compareChart = null;
 let currentOpenLocId = null, socSource = 'all', _activeCatFilter = null;
+let compareRawData = {}; // {locId: {name, reviews}}
+const COMPARE_COLORS = ['#1e3a5f','#0ea5e9','#7c3aed'];
 
 function sc(s){ return s>=70?'var(--green)':s>=45?'#f59e0b':'var(--red)'; }
 function fd(d){ if(!d) return '—'; try{ return new Date(d).toLocaleDateString('tr-TR',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return d; } }
@@ -361,6 +408,15 @@ function render(){
   if(DATA.expires_at) document.getElementById('expire-note').textContent =
     `Demo ${new Date(DATA.expires_at).toLocaleDateString('tr-TR')} tarihine kadar aktif`;
   if(DATA.limit_reached) document.getElementById('limit-banner').style.display='block';
+
+  // Kategori dropdown'larını doldur
+  const cats=Object.keys(DATA.categories||{}).sort();
+  ['trend-cat-filter'].forEach(selId=>{
+    const sel=document.getElementById(selId);
+    if(!sel||sel.options.length>1) return;
+    cats.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+  });
+
   renderOverview();
   renderTrend();
 }
@@ -435,19 +491,36 @@ function handleCatTag(encodedName){
   document.querySelectorAll('.tag').forEach(t=>{
     t.style.opacity=decodeURIComponent(t.dataset.catname||'')==catName?'1':'0.4';
   });
-  const revs=(DATA.all_reviews||[]).filter(r=>r.overall_sentiment).slice(0,8);
+
+  // Gerçekten o kategoriye ait yorumları filtrele
+  const allRevs = DATA.all_reviews || [];
+  const catRevs = allRevs.filter(r => r.categories && r.categories.includes(catName));
+
+  const posRevs = [...catRevs].filter(r=>r.overall_sentiment==='positive')
+    .sort((a,b)=>(b.sentiment_score||0)-(a.sentiment_score||0)).slice(0,5);
+  const negRevs = [...catRevs].filter(r=>r.overall_sentiment==='negative')
+    .sort((a,b)=>(a.sentiment_score||50)-(b.sentiment_score||50)).slice(0,5);
+
   document.getElementById('cat-filtered-reviews')?.remove();
-  if(!revs.length) return;
   const panel=document.createElement('div');
   panel.id='cat-filtered-reviews';
   panel.style.cssText='margin-top:16px;padding-top:16px;border-top:2px solid var(--line)';
   panel.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700">📂 <strong>${catName}</strong> kategorisi</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700">📂 <strong>${catName}</strong> — ${catRevs.length} yorum</div>
       <button onclick="this.closest('#cat-filtered-reviews').remove();_activeCatFilter=null;document.querySelectorAll('.tag').forEach(t=>t.style.opacity='1')"
         style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;line-height:1">×</button>
     </div>
-    <div class="review-list">${revs.map(rvHtml).join('')}</div>`;
+    <div class="grid-2">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:10px">▼ En Olumsuz</div>
+        <div class="review-list">${negRevs.length?negRevs.map(rvHtml).join(''):'<div class="empty">Yok</div>'}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--green);margin-bottom:10px">▲ En Olumlu</div>
+        <div class="review-list">${posRevs.length?posRevs.map(rvHtml).join(''):'<div class="empty">Yok</div>'}</div>
+      </div>
+    </div>`;
   document.querySelector('#cat-tags')?.closest('.card')?.after(panel);
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -455,7 +528,28 @@ function handleCatTag(encodedName){
 function renderTrend(){
   if(!DATA?.trend) return;
   const period=parseInt(document.getElementById('trend-period')?.value||'12');
-  let {labels,scores,counts}=DATA.trend;
+  const catFilter=document.getElementById('trend-cat-filter')?.value||'';
+
+  // Kategori filtresi varsa all_reviews'dan hesapla
+  let labels, scores, counts;
+  if(catFilter){
+    const allRevs=(DATA.all_reviews||[]).filter(r=>r.categories&&r.categories.includes(catFilter));
+    const months={};
+    allRevs.forEach(r=>{
+      if(!r.review_date||!r.sentiment_score) return;
+      const mo=r.review_date.slice(0,7);
+      if(!months[mo]) months[mo]={scores:[],count:0};
+      months[mo].scores.push(r.sentiment_score);
+      months[mo].count++;
+    });
+    labels=Object.keys(months).sort();
+    scores=labels.map(m=>Math.round(months[m].scores.reduce((s,v)=>s+v,0)/months[m].scores.length));
+    counts=labels.map(m=>months[m].count);
+  } else {
+    ({labels,scores,counts}=DATA.trend);
+    labels=[...labels]; scores=[...scores]; counts=[...counts];
+  }
+
   if(period>0){
     const cutoff=new Date();
     cutoff.setMonth(cutoff.getMonth()-period);
@@ -463,6 +557,7 @@ function renderTrend(){
     const idx=labels.findIndex(l=>l>=cutStr);
     if(idx>0){ labels=labels.slice(idx); scores=scores.slice(idx); counts=counts.slice(idx); }
   }
+
   const ctx=document.getElementById('trend-chart')?.getContext('2d');
   if(!ctx) return;
   if(trendChart) trendChart.destroy();
@@ -471,11 +566,12 @@ function renderTrend(){
     data:{
       labels:labels.map(l=>{const[y,m]=l.split('-');return new Date(y,m-1).toLocaleDateString('tr-TR',{month:'short',year:'2-digit'});}),
       datasets:[{
-        label:'Ortalama Skor',data:scores,
-        borderColor:'#1e3a5f',backgroundColor:'rgba(30,58,95,.08)',
+        label:catFilter||'Ortalama Skor',data:scores,
+        borderColor:catFilter?'#7c3aed':'#1e3a5f',
+        backgroundColor:catFilter?'rgba(124,58,237,.06)':'rgba(30,58,95,.08)',
         fill:true,tension:0.4,spanGaps:true,
         pointRadius:counts.map(c=>c>=5?5:3),
-        pointBackgroundColor:counts.map(c=>c>=5?'#1e3a5f':'#cbd5e1'),
+        pointBackgroundColor:counts.map(c=>c>=5?(catFilter?'#7c3aed':'#1e3a5f'):'#cbd5e1'),
       }]
     },
     options:{
@@ -510,26 +606,63 @@ function openLoc(locId, name){
   document.getElementById('lc-'+locId)?.classList.add('selected');
   document.getElementById('loc-detail').style.display='block';
   document.getElementById('loc-detail-name').textContent=name;
+
+  // Karşılaştır butonuna locId ata
+  const cmpBtn=document.getElementById('btn-add-compare');
+  if(cmpBtn){ cmpBtn.dataset.locid=locId; cmpBtn.dataset.name=name; }
+
+  // Kategori filtre dropdown'ını doldur
+  const catSel=document.getElementById('loc-cat-filter');
+  if(catSel && catSel.options.length<=1){
+    Object.keys(DATA.categories||{}).sort().forEach(c=>{
+      const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o);
+    });
+  }
+
   const locRevs=(DATA.all_reviews||[]).filter(r=>r.location_id===locId);
-  const negRevs=[...locRevs].sort((a,b)=>(a.sentiment_score||50)-(b.sentiment_score||50)).slice(0,5);
-  document.getElementById('loc-reviews').innerHTML=negRevs.length?negRevs.map(rvHtml).join(''):'<div class="empty">Yorum yok</div>';
   renderCatTags(DATA.categories,'loc-cat-tags');
+  renderLocReviews(locRevs,'');
   drawLocTrend(locId,locRevs);
   document.getElementById('loc-detail').scrollIntoView({behavior:'smooth'});
 }
 
-function reloadLocTrend(){
-  if(!currentOpenLocId) return;
-  drawLocTrend(currentOpenLocId,(DATA.all_reviews||[]).filter(r=>r.location_id===currentOpenLocId));
+function renderLocReviews(revs, catFilter){
+  let filtered = catFilter ? revs.filter(r=>r.categories&&r.categories.includes(catFilter)) : revs;
+  const neg=[...filtered].filter(r=>r.overall_sentiment==='negative')
+    .sort((a,b)=>(a.sentiment_score||50)-(b.sentiment_score||50)).slice(0,5);
+  const pos=[...filtered].filter(r=>r.overall_sentiment==='positive')
+    .sort((a,b)=>(b.sentiment_score||0)-(a.sentiment_score||0)).slice(0,5);
+  const negEl=document.getElementById('loc-reviews-neg');
+  const posEl=document.getElementById('loc-reviews-pos');
+  if(negEl) negEl.innerHTML=neg.length?neg.map(rvHtml).join(''):'<div class="empty">Yorum yok</div>';
+  if(posEl) posEl.innerHTML=pos.length?pos.map(rvHtml).join(''):'<div class="empty">Yorum yok</div>';
 }
 
-function drawLocTrend(locId, reviews){
+function closeLoc(){
+  document.getElementById('loc-detail').style.display='none';
+  document.querySelectorAll('.loc-card').forEach(c=>c.classList.remove('selected'));
+  currentOpenLocId=null;
+}
+
+function reloadLocTrend(){
+  if(!currentOpenLocId) return;
+  const locRevs=(DATA.all_reviews||[]).filter(r=>r.location_id===currentOpenLocId);
+  const catFilter=document.getElementById('loc-cat-filter')?.value||'';
+  drawLocTrend(currentOpenLocId,locRevs,catFilter);
+  renderLocReviews(locRevs,catFilter);
+  if(Object.keys(compareRawData).length) renderCompareChart();
+}
+
+function drawLocTrend(locId, reviews, catFilter=''){
   const ctx=document.getElementById('loc-trend-chart')?.getContext('2d');
   if(!ctx) return;
   const period=parseInt(document.getElementById('loc-period')?.value||'12');
   const cutoff=period>0?new Date(Date.now()-period*30*24*3600*1000).toISOString().slice(0,7):'2000-01';
+
+  let filtered = catFilter ? reviews.filter(r=>r.categories&&r.categories.includes(catFilter)) : reviews;
+
   const months={};
-  reviews.forEach(r=>{
+  filtered.forEach(r=>{
     if(!r.review_date||!r.sentiment_score) return;
     const mo=r.review_date.slice(0,7);
     if(mo<cutoff) return;
@@ -539,19 +672,99 @@ function drawLocTrend(locId, reviews){
   });
   const labels=Object.keys(months).sort();
   const scores=labels.map(m=>Math.round(months[m].scores.reduce((s,v)=>s+v,0)/months[m].scores.length));
+  const counts=labels.map(m=>months[m].count);
+
   if(locTrendChart) locTrendChart.destroy();
+  if(!labels.length){
+    document.getElementById('loc-trend-chart').closest('.chart-wrap').innerHTML='<div class="empty">Trend verisi yok</div>';
+    return;
+  }
   locTrendChart=new Chart(ctx,{
-    type:'bar',
+    type:'line',
     data:{
       labels:labels.map(l=>{const[y,m]=l.split('-');return new Date(y,m-1).toLocaleDateString('tr-TR',{month:'short',year:'2-digit'});}),
       datasets:[{
-        label:'Ort. Skor',data:scores,borderRadius:4,
-        backgroundColor:scores.map(s=>s>=70?'rgba(21,128,61,.75)':s>=45?'rgba(245,158,11,.7)':'rgba(185,28,28,.75)'),
+        label:'Ort. Skor',data:scores,
+        borderColor:catFilter?'#7c3aed':'#1e3a5f',
+        backgroundColor:catFilter?'rgba(124,58,237,.06)':'rgba(30,58,95,.06)',
+        fill:true,tension:0.4,spanGaps:true,
+        pointRadius:counts.map(c=>c>=5?5:3),
+        pointBackgroundColor:counts.map(c=>c>=5?'#1e3a5f':'#cbd5e1'),
       }]
     },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{min:0,max:100,grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Skor: ${ctx.raw} (${counts[ctx.dataIndex]} yorum)`}}},
+      scales:{y:{min:0,max:100,ticks:{stepSize:25},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}
+    }
   });
+}
+
+// Karşılaştırma
+function addToCompare(){
+  const btn=document.getElementById('btn-add-compare');
+  const locId=btn?.dataset.locid;
+  const name=btn?.dataset.name;
+  if(!locId||compareRawData[locId]) return;
+  if(Object.keys(compareRawData).length>=3){alert('En fazla 3 şube karşılaştırabilirsiniz.');return;}
+  const reviews=(DATA.all_reviews||[]).filter(r=>r.location_id===locId);
+  compareRawData[locId]={name,reviews};
+  renderCompareChart();
+}
+
+function renderCompareChart(){
+  const section=document.getElementById('loc-compare-section');
+  section.style.display='block';
+  const period=parseInt(document.getElementById('loc-period')?.value||'12');
+  const catFilter=document.getElementById('loc-cat-filter')?.value||'';
+  const cutoff=period>0?new Date(Date.now()-period*30*24*3600*1000).toISOString().slice(0,7):'2000-01';
+
+  const datasets=Object.entries(compareRawData).map(([locId,d],i)=>{
+    let revs=catFilter?d.reviews.filter(r=>r.categories&&r.categories.includes(catFilter)):d.reviews;
+    const months={};
+    revs.forEach(r=>{
+      if(!r.review_date||!r.sentiment_score) return;
+      const mo=r.review_date.slice(0,7);
+      if(mo<cutoff) return;
+      if(!months[mo]) months[mo]=[];
+      months[mo].push(r.sentiment_score);
+    });
+    const labels=Object.keys(months).sort();
+    const scores=labels.map(m=>Math.round(months[m].reduce((s,v)=>s+v,0)/months[m].length));
+    return {locId,name:d.name,labels,scores};
+  });
+
+  const allLabels=[...new Set(datasets.flatMap(d=>d.labels))].sort();
+  document.getElementById('loc-compare-labels').innerHTML=datasets.map((d,i)=>
+    `<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600">
+      <span style="width:10px;height:10px;border-radius:50%;background:${COMPARE_COLORS[i]};display:inline-block"></span>${d.name}</span>`
+  ).join('');
+
+  const ctx=document.getElementById('loc-compare-chart')?.getContext('2d');
+  if(!ctx) return;
+  if(compareChart) compareChart.destroy();
+  compareChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:allLabels.map(l=>{const[y,m]=l.split('-');return new Date(y,m-1).toLocaleDateString('tr-TR',{month:'short',year:'2-digit'});}),
+      datasets:datasets.map((d,i)=>({
+        label:d.name,
+        data:allLabels.map(l=>{const idx=d.labels.indexOf(l);return idx>=0?d.scores[idx]:null;}),
+        borderColor:COMPARE_COLORS[i],backgroundColor:COMPARE_COLORS[i]+'22',
+        borderWidth:2.5,pointRadius:4,fill:false,tension:.4,spanGaps:true
+      }))
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{y:{min:0,max:100,grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}
+    }
+  });
+  section.scrollIntoView({behavior:'smooth'});
+}
+
+function clearCompare(){
+  compareRawData={};
+  if(compareChart){compareChart.destroy();compareChart=null;}
+  document.getElementById('loc-compare-section').style.display='none';
 }
 
 function setSocSource(src,btn){
