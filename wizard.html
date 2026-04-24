@@ -594,7 +594,7 @@ async function checkExistingSetup() {
       state.brandId = s.brand_id;
       state.brandName = s.brand_name || '';
       state.sources = s.sources || [];
-      state.locations = s.locations || [];
+      state.locations = (s.locations || []).filter(l => !l.is_general);
       document.getElementById('brand-name-input').value = state.brandName;
       document.getElementById('brand-name-preview').textContent = state.brandName;
     }
