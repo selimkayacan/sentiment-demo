@@ -564,15 +564,16 @@ async function handleRegister() {
       return;
     }
 
-    // Başarı — konfirmasyon maili gönderildi
-    document.getElementById('form-content').style.display = 'none';
+    // Başarı — şifre oluşturma maili gönderildi
     document.getElementById('confirm-email').textContent = email;
     document.getElementById('success-msg').style.display = 'block';
+    document.getElementById('submit-btn').style.display = 'none';
+    document.querySelectorAll('#panel-signup .field').forEach(f => f.style.display = 'none');
 
   } catch(e) {
     showError('Bağlantı hatası, lütfen tekrar deneyin');
     btn.disabled = false;
-    document.getElementById('btn-text').textContent = 'Demo Başvurusu Yap';
+    document.getElementById('btn-text').textContent = 'Kayıt Ol';
     document.getElementById('btn-arrow').textContent = '→';
   }
 }
