@@ -245,6 +245,47 @@ h2{font-family:'DM Serif Display',serif;font-size:38px;line-height:1.1;letter-sp
   .main{padding:40px 24px}
   h2{font-size:28px}
 }
+
+/* SLAYTLAR */
+.slides-wrap{
+  max-width:560px;margin-top:32px;
+  position:relative;min-height:200px;
+}
+.slide{
+  position:absolute;inset:0;
+  background:var(--white);border:1.5px solid var(--border);border-radius:6px;
+  padding:32px 36px;
+  opacity:0;transition:opacity 1.2s ease;
+  pointer-events:none;
+}
+.slide.active{opacity:1;pointer-events:auto}
+.slide-tag{
+  font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:16px;
+}
+.slide-title{
+  font-family:'DM Serif Display',serif;font-size:22px;
+  line-height:1.2;letter-spacing:-0.3px;margin-bottom:12px;
+}
+.slide-body{font-size:14px;color:var(--muted);line-height:1.8;}
+.slide-stat{
+  display:flex;gap:24px;margin-top:20px;flex-wrap:wrap;
+}
+.slide-stat-item{text-align:center;}
+.slide-stat-num{
+  font-family:'DM Serif Display',serif;font-size:36px;
+  color:var(--accent);line-height:1;
+}
+.slide-stat-label{font-size:11px;color:var(--muted);margin-top:4px;}
+.slide-stat-source{font-family:'DM Sans',sans-serif;font-size:9px;color:#b0a898;margin-top:6px;font-style:italic;line-height:1.4;}
+.slide-dots{
+  display:flex;gap:8px;margin-top:20px;
+}
+.slide-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--border);transition:background .3s;
+}
+.slide-dot.active{background:var(--accent);}
 </style>
 </head>
 <body>
@@ -510,7 +551,7 @@ h2{font-family:'DM Serif Display',serif;font-size:38px;line-height:1.1;letter-sp
           Bu işlem 5–15 dakika sürebilir.<br><br>
           Tamamlandığında <strong id="waiting-email"></strong> adresine bildirim gönderilecek.
         </p>
-        <div class="waiting-steps">
+        <div class="waiting-steps" id="waiting-steps-list">
           <div class="waiting-step active-step" id="ws-gmaps">
             <div class="ws-dot"></div>Google Maps yorumları toplanıyor
           </div>
@@ -522,6 +563,71 @@ h2{font-family:'DM Serif Display',serif;font-size:38px;line-height:1.1;letter-sp
           </div>
           <div class="waiting-step" id="ws-done">
             <div class="ws-dot"></div>Dashboard hazırlanıyor
+          </div>
+        </div>
+
+        <!-- SLAYTLAR — son adım yeşile dönünce görünür -->
+        <div class="slides-wrap" id="slides-wrap" style="display:none">
+          <!-- Slayt 1 -->
+          <div class="slide active" id="slide-0">
+            <div class="slide-tag">Algı Analizi Nedir?</div>
+            <div class="slide-title">Müşterileriniz ne düşünüyor,<br>artık biliyorsunuz.</div>
+            <div class="slide-body">
+              Algı analizi, binlerce müşteri yorumunu otomatik okuyup
+              "Bu yorum olumlu mu, olumsuz mu, hangi konudan bahsediyor?" sorusunu
+              saniyeler içinde yanıtlar. İnsan gözünün haftalar süreceği analizi dakikada yaparsınız.
+            </div>
+          </div>
+          <!-- Slayt 2 -->
+          <div class="slide" id="slide-1">
+            <div class="slide-tag">Dünyada Kimler Kullanıyor?</div>
+            <div class="slide-title">Küresel markaların vazgeçilmezi,<br>artık sizin elinizde.</div>
+            <div class="slide-body">Müşteri memnuniyetini gerçek zamanlı izlemek isteyen markalar algı analizine ciddi yatırımlar yapıyor.</div>
+            <div class="slide-stat">
+              <div class="slide-stat-item">
+                <div class="slide-stat-num">%74</div>
+                <div class="slide-stat-label">Küresel marka müşteri<br>geri bildirim analizine<br>yatırım yapıyor</div>
+                <div class="slide-stat-source">Forrester Research, 2024<br>Customer Intelligence Survey</div>
+              </div>
+              <div class="slide-stat-item">
+                <div class="slide-stat-num">2.8x</div>
+                <div class="slide-stat-label">Veri odaklı markalar<br>rakiplerine kıyasla<br>daha hızlı büyüyor</div>
+                <div class="slide-stat-source">McKinsey Analytics,<br>The Age of Analytics, 2023</div>
+              </div>
+              <div class="slide-stat-item">
+                <div class="slide-stat-num">%26</div>
+                <div class="slide-stat-label">Daha az müşteri kaybı —<br>geri bildirimleri proaktif<br>takip eden markalarda</div>
+                <div class="slide-stat-source">Gartner CX Report,<br>Retention Metrics, 2024</div>
+              </div>
+            </div>
+          </div>
+          <!-- Slayt 3 -->
+          <div class="slide" id="slide-2">
+            <div class="slide-tag">Ne Kazanıyorsunuz?</div>
+            <div class="slide-title">Sorun büyümeden görün,<br>fırsatı zamanında yakalayın.</div>
+            <div class="slide-body">
+              <span style="color:var(--accent)">→</span> Hangi şubenizde bekleme şikayeti artıyor?<br>
+              <span style="color:var(--accent)">→</span> Hangi ürün kategoriniz övgü alıyor?<br>
+              <span style="color:var(--accent)">→</span> Rakibinize kıyasla müşteri hizmetleri skorunuz nerede?<br><br>
+              Bu soruların cevabı artık raporlarda değil — dashboardunuzda, anlık.
+            </div>
+          </div>
+          <!-- Slayt 4 -->
+          <div class="slide" id="slide-3">
+            <div class="slide-tag">Az Kaldı</div>
+            <div class="slide-title">Verileriniz analiz ediliyor...</div>
+            <div class="slide-body">
+              Yapay zeka modelimiz her yorumu tek tek okuyor, kategorilere ayırıyor ve
+              şube bazlı skorlar hesaplıyor. Tamamlandığında size mail atacağız.<br><br>
+              <strong style="color:var(--ink)">Tarayıcıyı kapatabilirsiniz</strong> — arka planda çalışmaya devam eder.
+            </div>
+          </div>
+          <!-- Dot navigasyon -->
+          <div class="slide-dots" id="slide-dots">
+            <div class="slide-dot active"></div>
+            <div class="slide-dot"></div>
+            <div class="slide-dot"></div>
+            <div class="slide-dot"></div>
           </div>
         </div>
       </div>
@@ -916,13 +1022,48 @@ function startWaitingAnimation() {
       i++;
     } else {
       clearInterval(interval);
-      // Dashboard'a yönlendir
+      // Tüm adımlar yeşil — slaytları göster
+      startSlides();
+    }
+  }, 8000);
+}
+
+function startSlides() {
+  const stepsEl  = document.getElementById('waiting-steps-list');
+  const slidesEl = document.getElementById('slides-wrap');
+  const slides   = document.querySelectorAll('.slide');
+  const dots     = document.querySelectorAll('.slide-dot');
+  const SLIDE_DURATION = 9000; // 5 saniye / slayt
+
+  // Adımları gizle, slaytları göster
+  if (stepsEl) stepsEl.style.opacity = '0';
+  setTimeout(() => {
+    if (stepsEl) stepsEl.style.display = 'none';
+    if (slidesEl) slidesEl.style.display = 'block';
+  }, 600);
+
+  let current = 0;
+
+  function showSlide(idx) {
+    slides.forEach((s, j) => s.classList.toggle('active', j === idx));
+    dots.forEach((d, j) => d.classList.toggle('active', j === idx));
+  }
+
+  showSlide(0);
+
+  const slideInterval = setInterval(() => {
+    current = (current + 1) % slides.length;
+    showSlide(current);
+
+    // Son slayta gelince biraz bekle sonra dashboard'a git
+    if (current === slides.length - 1) {
+      clearInterval(slideInterval);
       setTimeout(() => {
         localStorage.setItem('demo_uid', USER_ID);
         window.location.href = `./dashboard.html?uid=${USER_ID}`;
-      }, 2000);
+      }, SLIDE_DURATION + 1000);
     }
-  }, 8000);
+  }, SLIDE_DURATION);
 }
 
 // ── STEP PAGE HOOKS ───────────────────────────────────────────
