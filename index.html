@@ -261,10 +261,22 @@ h1{animation-delay:.2s}
     </p>
 
     <div class="hero-form" id="register-form">
-      <div class="form-title">7 günlük ücretsiz demo erişimi</div>
-      <div class="form-sub">Kredi kartı gerekmez. Hemen başlayın.</div>
+      <!-- TAB'LAR -->
+      <div style="display:flex;margin-bottom:20px;border:1.5px solid var(--border);border-radius:3px;overflow:hidden">
+        <button id="tab-signup" onclick="switchFormTab('signup')"
+          style="flex:1;padding:10px;font-family:inherit;font-size:13px;font-weight:600;border:none;background:var(--ink);color:var(--paper);cursor:pointer;transition:all .2s">
+          Kayıt Ol
+        </button>
+        <button id="tab-signin" onclick="switchFormTab('signin')"
+          style="flex:1;padding:10px;font-family:inherit;font-size:13px;font-weight:500;border:none;background:none;color:var(--muted);cursor:pointer;transition:all .2s">
+          Giriş Yap
+        </button>
+      </div>
 
-      <div id="form-content">
+      <!-- KAYIT OL -->
+      <div id="panel-signup">
+        <div class="form-title">7 günlük ücretsiz demo</div>
+        <div class="form-sub" style="margin-bottom:16px">Kredi kartı gerekmez.</div>
         <div class="field">
           <label>Firma Adı</label>
           <input type="text" id="company" placeholder="Örn: Acme Perakende A.Ş." autocomplete="organization">
@@ -274,17 +286,42 @@ h1{animation-delay:.2s}
           <input type="email" id="email" placeholder="ad.soyad@firma.com" autocomplete="email">
         </div>
         <button class="submit-btn" id="submit-btn" onclick="handleRegister()">
-          <span id="btn-text">Demo Başvurusu Yap</span>
+          <span id="btn-text">Kayıt Ol</span>
           <span id="btn-arrow">→</span>
         </button>
         <div class="form-note">Kayıt olarak gizlilik politikamızı kabul etmiş olursunuz.</div>
         <div class="error-msg" id="error-msg"></div>
+        <div class="success-msg" id="success-msg" style="display:none">
+          <h3>✓ Teşekkürler!</h3>
+          <p>Şifre oluşturma linki <strong id="confirm-email"></strong> adresine gönderildi.<br>
+          Mailinizi kontrol edin (spam klasörüne de bakın).</p>
+        </div>
       </div>
 
-      <div class="success-msg" id="success-msg">
-        <h3>✓ Teşekkürler!</h3>
-        <p>Konfirmasyon linki <strong id="confirm-email"></strong> adresine gönderildi.<br>
-        Mailinizi kontrol edin ve linke tıklayarak devam edin.</p>
+      <!-- GİRİŞ YAP -->
+      <div id="panel-signin" style="display:none">
+        <div class="form-title">Hesabınıza giriş yapın</div>
+        <div class="form-sub" style="margin-bottom:16px">Demo hesabınız varsa buradan girin.</div>
+        <div class="field">
+          <label>E-posta</label>
+          <input type="email" id="signin-email" placeholder="ad.soyad@firma.com" autocomplete="email"
+                 onkeydown="if(event.key==='Enter')handleSignIn()">
+        </div>
+        <div class="field">
+          <label>Şifre</label>
+          <input type="password" id="signin-pass" placeholder="••••••••" autocomplete="current-password"
+                 onkeydown="if(event.key==='Enter')handleSignIn()">
+        </div>
+        <button class="submit-btn" id="signin-btn" onclick="handleSignIn()">
+          <span id="signin-btn-text">Giriş Yap</span>
+          <span>→</span>
+        </button>
+        <div class="error-msg" id="signin-error"></div>
+        <div style="text-align:center;margin-top:12px">
+          <a href="./login.html" style="font-size:12px;color:var(--muted);text-decoration:none">
+            Şifremi unuttum →
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -408,35 +445,73 @@ const SUPABASE_URL      = 'https://escjdzsfxzwvshapzugb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2pkenNmeHp3dnNoYXB6dWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzMzgsImV4cCI6MjA4OTg4MDMzOH0.ylywekAEhONMpx5RBCdZXafUna9jZcB19etFrEcRJe8';
 const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Oturum kontrolü — Supabase session varsa yönlendir
+function switchFormTab(tab) {
+  const isSignup = tab === 'signup';
+  document.getElementById('panel-signup').style.display = isSignup ? 'block' : 'none';
+  document.getElementById('panel-signin').style.display = isSignup ? 'none' : 'block';
+  const ts = document.getElementById('tab-signup');
+  const ti = document.getElementById('tab-signin');
+  ts.style.background = isSignup ? 'var(--ink)' : 'none';
+  ts.style.color = isSignup ? 'var(--paper)' : 'var(--muted)';
+  ts.style.fontWeight = isSignup ? '600' : '500';
+  ti.style.background = isSignup ? 'none' : 'var(--ink)';
+  ti.style.color = isSignup ? 'var(--muted)' : 'var(--paper)';
+  ti.style.fontWeight = isSignup ? '500' : '600';
+}
+
+async function handleSignIn() {
+  const email = document.getElementById('signin-email').value.trim();
+  const pass  = document.getElementById('signin-pass').value;
+  const errEl = document.getElementById('signin-error');
+  const btn   = document.getElementById('signin-btn');
+  errEl.style.display = 'none';
+
+  if (!email || !pass) { errEl.textContent='E-posta ve şifre zorunlu'; errEl.style.display='block'; return; }
+
+  btn.disabled = true;
+  document.getElementById('signin-btn-text').textContent = 'Giriş yapılıyor...';
+
+  try {
+    const { data, error } = await sbClient.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+
+    // uid bul
+    const resp = await fetch(`${API_BASE}/demo/status-by-email?email=${encodeURIComponent(email)}`);
+    if (resp.ok) {
+      const s = await resp.json();
+      if (s.user_id) {
+        localStorage.setItem('demo_uid', s.user_id);
+        window.location.href = (s.brand_id && s.analyzed_count > 0)
+          ? `./dashboard.html?uid=${s.user_id}`
+          : `./wizard.html?uid=${s.user_id}`;
+        return;
+      }
+    }
+    window.location.href = './wizard.html';
+  } catch(e) {
+    let msg = e.message || 'Giriş başarısız';
+    if (msg.includes('Invalid login')) msg = 'E-posta veya şifre hatalı';
+    errEl.textContent = msg;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    document.getElementById('signin-btn-text').textContent = 'Giriş Yap';
+  }
+}
+
+// Oturum kontrolü — session varsa yönlendir
 (async function checkExistingUser() {
   try {
-    // Önce Supabase session kontrol et
     const { data: { session } } = await sbClient.auth.getSession();
-    if (session) {
-      // Oturum var — demo_status_by_email ile uid bul, yönlendir
-      const resp = await fetch(`${API_BASE}/demo/status-by-email?email=${encodeURIComponent(session.user.email)}`);
-      if (resp.ok) {
-        const s = await resp.json();
-        if (s.user_id && !s.is_blocked) {
-          localStorage.setItem('demo_uid', s.user_id);
-          if (s.brand_id && s.analyzed_count > 0) {
-            window.location.href = `./dashboard.html?uid=${s.user_id}`;
-          } else {
-            window.location.href = `./wizard.html?uid=${s.user_id}`;
-          }
-          return;
-        }
-      }
-      // Session var ama demo_users'da yok — login'e at
-      window.location.href = './login.html';
-      return;
-    }
-    // Session yok — localStorage'ı temizle, formu göster
-    localStorage.removeItem('demo_uid');
-  } catch(e) {
-    localStorage.removeItem('demo_uid');
-  }
+    if (!session) { localStorage.removeItem('demo_uid'); return; }
+    const resp = await fetch(`${API_BASE}/demo/status-by-email?email=${encodeURIComponent(session.user.email)}`);
+    if (!resp.ok) { return; }
+    const s = await resp.json();
+    if (!s.user_id || s.is_blocked) { return; }
+    localStorage.setItem('demo_uid', s.user_id);
+    window.location.href = (s.brand_id && s.analyzed_count > 0)
+      ? `./dashboard.html?uid=${s.user_id}`
+      : `./wizard.html?uid=${s.user_id}`;
+  } catch(e) { localStorage.removeItem('demo_uid'); }
 })();
 
 async function handleRegister() {
