@@ -821,7 +821,19 @@ function toggleLoc(i, name, address, placeId, lat, lng) {
   });
 }
 
-function removeLoc(idx) {
+async function removeLoc(idx) {
+  const loc = state.locations[idx];
+  // DB'de kayıtlıysa sil
+  if (loc && loc.locationId) {
+    try {
+      await api('/demo/remove-location', 'POST', {
+        user_id: USER_ID,
+        location_id: loc.locationId,
+      });
+    } catch(e) {
+      console.warn('Lokasyon DB silme hatası:', e);
+    }
+  }
   state.locations.splice(idx, 1);
   renderSelectedLocs();
 }
@@ -862,15 +874,17 @@ async function goStep3() {
   if (state.locations.length < 1) { showAlert('step2-err','En az 1 lokasyon seçin'); return; }
   if (state.locations.length > 3) { showAlert('step2-err','En fazla 3 lokasyon seçebilirsiniz'); return; }
 
-  // Lokasyonları backend'e kaydet
+  // Lokasyonları backend'e kaydet (idempotent — geri/ileri güvenli)
   try {
     for (const loc of state.locations) {
-      await api('/demo/add-location', 'POST', {
+      const res = await api('/demo/add-location', 'POST', {
         user_id: USER_ID, brand_id: state.brandId,
         name: (loc.customName||loc.name).trim() || loc.name,
         address: loc.address,
         google_place_id: loc.placeId, lat: loc.lat, lng: loc.lng,
       });
+      // DB'deki location_id'yi state'e kaydet (silme için lazım)
+      if (res && res.location_id) loc.locationId = res.location_id;
     }
     goStep(3);
   } catch(e) {
